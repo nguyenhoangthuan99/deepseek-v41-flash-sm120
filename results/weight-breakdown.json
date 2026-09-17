@@ -1,0 +1,24 @@
+{
+  "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+  "measured_2026_09_17": true,
+  "method": "sum of safetensors data_offsets per weight-name group, from model.safetensors.index.json at the served checkpoint",
+  "total_weight_gb": 510.3,
+  "total_weight_bytes": 510296708312,
+  "num_tensors": 96085,
+  "gpu_vram_gb": 95.6,
+  "gpu_vram_note": "RTX PRO 6000 Blackwell Server Edition: nvidia-smi memory.total = 97887 MiB",
+  "groups_gb": {
+    "layers_moe_decoder": 295.6,
+    "engram_memory": 203.1,
+    "mtp_dspark": 7.9,
+    "embed_head": 2.6,
+    "vision_encoder_vit": 1.0,
+    "indexer_dsa": 0.05
+  },
+  "notes": [
+    "No separate encoder/decoder weight sets exist. The vision encoder (ViT) is only ~1.0 GB.",
+    "The '552B asymmetric encoder-decoder / ~8B prefill / ~16B decode' is a COMPUTE-path difference over the SHARED layers.* MoE stack, not two weight tensors.",
+    "engram_memory (203 GB) is the n-gram/retrieval embedding tables (engram_layer_ids=[1,14], engram_vocab_size=16M); it is the only large CPU-offload candidate.",
+    "In SGLang PD disaggregation both the prefill pool and the decode pool load the FULL model; the split is by phase, KV is transferred prefill->decode."
+  ]
+}

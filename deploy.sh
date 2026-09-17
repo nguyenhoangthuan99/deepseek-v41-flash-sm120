@@ -17,6 +17,16 @@ CONTEXT_LEN=${CONTEXT_LEN:-1048576}
 MEM_FRACTION=${MEM_FRACTION:-0.80}
 MAX_RUNNING=${MAX_RUNNING:-32}
 DECODE_STEPS=${DECODE_STEPS:-4}
+# Scheduler-latency knobs (see SCHEDULING-BLOCKING.md). Defaults reproduce the
+# validated throughput config; serve-disagg.sh's `aggregated` mode overrides them
+# to cut staggered-arrival head-of-line blocking.
+CHUNKED_PREFILL=${CHUNKED_PREFILL:-2048}
+MIXED_CHUNK=${MIXED_CHUNK:-0}
+SCHED_CONSERV=${SCHED_CONSERV:-}
+EXTRA_ARGS=${EXTRA_ARGS:-}
+# GPU selection: "all" or a Docker device spec, e.g. GPU_DEVICES=device=0,1,2,3
+# (used by serve-disagg.sh to place prefill/decode pools on GPU subsets).
+GPU_DEVICES=${GPU_DEVICES:-all}
 RANDOM_SEED=${RANDOM_SEED:-599261575}
 NCCL_P2P_LEVEL=${NCCL_P2P_LEVEL:-PHB}
 # Optional NCCL protocol override. Empty (default) keeps NCCL's tuner.
@@ -179,7 +189,7 @@ check_gpus() {
 }
 
 launch_args() {
-    RUN=(docker run --gpus all --rm --name "$NAME"
+    RUN=(docker run --gpus "$GPU_DEVICES" --rm --name "$NAME"
         --label "$MANAGED_LABEL=true"
         --shm-size 32g --ipc=host --cap-add SYS_PTRACE
         --ulimit memlock=-1 --ulimit stack=67108864
@@ -205,13 +215,19 @@ launch_args() {
         --trust-remote-code --random-seed "$RANDOM_SEED"
         --tensor-parallel-size "$TP" --context-length "$CONTEXT_LEN"
         --mem-fraction-static "$MEM_FRACTION" --max-running-requests "$MAX_RUNNING"
-        --chunked-prefill-size 2048 --moe-runner-backend "$MOE_BACKEND")
+        --chunked-prefill-size "$CHUNKED_PREFILL" --moe-runner-backend "$MOE_BACKEND")
     if [[ "$EP" != 0 ]]; then RUN+=(--ep-size "$EP"); fi
     RUN+=(--enable-deepseek-v4-fp4-indexer --num-continuous-decode-steps "$DECODE_STEPS")
     if [[ "$SPEC" == 1 ]]; then
         RUN+=(--speculative-algorithm DSPARK --speculative-dspark-block-size "$DSPARK_BLOCK")
     fi
+    if [[ "$MIXED_CHUNK" == 1 ]]; then RUN+=(--enable-mixed-chunk); fi
+    if [[ -n "$SCHED_CONSERV" ]]; then RUN+=(--schedule-conservativeness "$SCHED_CONSERV"); fi
     RUN+=(--watchdog-timeout 3600)
+    if [[ -n "$EXTRA_ARGS" ]]; then
+        # shellcheck disable=SC2206
+        RUN+=($EXTRA_ARGS)
+    fi
     # Keep default target/draft CUDA graphs; the model disables prefill graphs.
 }
 
@@ -220,11 +236,11 @@ check_launch_settings() {
     [[ "$NAME" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] || fail "Invalid container NAME."
     [[ "$PORT" =~ ^[1-9][0-9]*$ ]] && (( PORT <= 65535 )) || fail "Invalid PORT."
     local variable
-    for variable in TP DSPARK_BLOCK CONTEXT_LEN MAX_RUNNING DECODE_STEPS; do
+    for variable in TP DSPARK_BLOCK CONTEXT_LEN MAX_RUNNING DECODE_STEPS CHUNKED_PREFILL; do
         [[ "${!variable}" =~ ^[1-9][0-9]*$ ]] || fail "$variable must be a positive integer."
     done
     [[ "$EP" =~ ^(0|[1-9][0-9]*)$ ]] || fail "EP must be a nonnegative integer."
-    for variable in SPEC STRICT DSV41_SM120_DISABLE DSV41_SM120_FP8_DISABLE; do
+    for variable in SPEC STRICT DSV41_SM120_DISABLE DSV41_SM120_FP8_DISABLE MIXED_CHUNK; do
         [[ "${!variable}" == 0 || "${!variable}" == 1 ]] || fail "$variable must be 0 or 1."
     done
 }

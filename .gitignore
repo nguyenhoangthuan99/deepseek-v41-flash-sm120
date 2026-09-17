@@ -1,4 +1,5 @@
-# Explicit environment loading only; never commit credentials.
+# Explicit environment loading only; never commit credentials or local overrides.
+deploy.sh.tmp
 .env
 .env.*
 !.env.example
