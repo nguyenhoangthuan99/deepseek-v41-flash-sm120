@@ -1,0 +1,657 @@
+{
+  "kind": "custom_cuda_w8a8_engine_comparison",
+  "date": "2026-09-17",
+  "question": "Can a hand-written CUDA kernel, tensor-core W8A8, or cuBLAS beat the tuned Triton block-FP8 kernel on SM120?",
+  "engines": {
+    "triton_generic": "upstream fallback kernel (no config tables)",
+    "triton_tuned": "serving-stack kernel + measured configs (incl. today's large-M extension)",
+    "cuda_custom": "hand-written mma.sync.aligned.m16n8k32.row.col.f32.e4m3.e4m3.f32 kernel; cp.async 2-3 stage pipeline; per-32-group fp32 scale-accumulate (same numerics contract as Triton); autotuned over 10 tile variants x split-K {1,2,4,8}",
+    "cublas_mxfp8": "cuBLASLt CUBLASLT_MATMUL_MATRIX_SCALE_VEC32_UE8M0 (e4m3 payload, e8m0 1x32 groups, 128x4-tiled blocked scale layout); 32x32 weight blocks expand losslessly to 1x32 rows",
+    "cublas_bf16": "dequantized bf16 cuBLAS GEMM (dequant excluded) as tensor-core reference"
+  },
+  "cells": [
+    {
+      "M": 64,
+      "N": 576,
+      "K": 5120,
+      "triton_generic_us": 44.03,
+      "triton_tuned_us": 33.13,
+      "cuda_custom_us": 18.51,
+      "cuda_cfg": {
+        "v": [
+          128,
+          64,
+          4,
+          2,
+          2
+        ],
+        "sk": 8,
+        "us": 18.51,
+        "rel_err": 0.00166022
+      },
+      "cublas_mxfp8_us": 42.06,
+      "mxfp8_rel_err": 0.03818015,
+      "cublas_bf16_dequant_us": 11.01,
+      "best_engine": "cuda_custom",
+      "best_speedup_vs_tuned_triton": 1.79
+    },
+    {
+      "M": 128,
+      "N": 576,
+      "K": 5120,
+      "triton_generic_us": 43.56,
+      "triton_tuned_us": 32.81,
+      "cuda_custom_us": 20.55,
+      "cuda_cfg": {
+        "v": [
+          64,
+          64,
+          2,
+          2,
+          3
+        ],
+        "sk": 8,
+        "us": 20.55,
+        "rel_err": 0.0016587
+      },
+      "cublas_mxfp8_us": 41.12,
+      "mxfp8_rel_err": 0.03841854,
+      "cublas_bf16_dequant_us": 10.43,
+      "best_engine": "cuda_custom",
+      "best_speedup_vs_tuned_triton": 1.6
+    },
+    {
+      "M": 512,
+      "N": 576,
+      "K": 5120,
+      "triton_generic_us": 45.57,
+      "triton_tuned_us": 35.51,
+      "cuda_custom_us": 30.8,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 8,
+        "us": 30.8,
+        "rel_err": 0.00166146
+      },
+      "cublas_mxfp8_us": 41.32,
+      "mxfp8_rel_err": 0.03821778,
+      "cublas_bf16_dequant_us": 18.64,
+      "best_engine": "cuda_custom",
+      "best_speedup_vs_tuned_triton": 1.15
+    },
+    {
+      "M": 2048,
+      "N": 576,
+      "K": 5120,
+      "triton_generic_us": 149.73,
+      "triton_tuned_us": 119.5,
+      "cuda_custom_us": 89.31,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 8,
+        "us": 89.31,
+        "rel_err": 0.00166047
+      },
+      "cublas_mxfp8_us": 41.12,
+      "mxfp8_rel_err": 0.03823715,
+      "cublas_bf16_dequant_us": 45.34,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 2.91
+    },
+    {
+      "M": 64,
+      "N": 1792,
+      "K": 5120,
+      "triton_generic_us": 47.68,
+      "triton_tuned_us": 33.43,
+      "cuda_custom_us": 22.62,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 8,
+        "us": 22.62,
+        "rel_err": 0.00166315
+      },
+      "cublas_mxfp8_us": 42.43,
+      "mxfp8_rel_err": 0.03829625,
+      "cublas_bf16_dequant_us": 14.48,
+      "best_engine": "cuda_custom",
+      "best_speedup_vs_tuned_triton": 1.48
+    },
+    {
+      "M": 128,
+      "N": 1792,
+      "K": 5120,
+      "triton_generic_us": 46.0,
+      "triton_tuned_us": 32.77,
+      "cuda_custom_us": 32.82,
+      "cuda_cfg": {
+        "v": [
+          128,
+          64,
+          4,
+          2,
+          2
+        ],
+        "sk": 8,
+        "us": 32.82,
+        "rel_err": 0.00166129
+      },
+      "cublas_mxfp8_us": 41.13,
+      "mxfp8_rel_err": 0.03828277,
+      "cublas_bf16_dequant_us": 18.45,
+      "best_engine": "triton_tuned",
+      "best_speedup_vs_tuned_triton": 1.0
+    },
+    {
+      "M": 512,
+      "N": 1792,
+      "K": 5120,
+      "triton_generic_us": 115.62,
+      "triton_tuned_us": 90.79,
+      "cuda_custom_us": 71.77,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 8,
+        "us": 71.77,
+        "rel_err": 0.00166292
+      },
+      "cublas_mxfp8_us": 43.12,
+      "mxfp8_rel_err": 0.03817815,
+      "cublas_bf16_dequant_us": 37.17,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 2.11
+    },
+    {
+      "M": 2048,
+      "N": 1792,
+      "K": 5120,
+      "triton_generic_us": 376.71,
+      "triton_tuned_us": 323.74,
+      "cuda_custom_us": 209.73,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 2,
+        "us": 209.73,
+        "rel_err": 0.00166035
+      },
+      "cublas_mxfp8_us": 89.41,
+      "mxfp8_rel_err": 0.03826202,
+      "cublas_bf16_dequant_us": 106.76,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 3.62
+    },
+    {
+      "M": 64,
+      "N": 4096,
+      "K": 1280,
+      "triton_generic_us": 21.85,
+      "triton_tuned_us": 32.34,
+      "cuda_custom_us": 16.41,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 4,
+        "us": 16.41,
+        "rel_err": 0.00166263
+      },
+      "cublas_mxfp8_us": 14.5,
+      "mxfp8_rel_err": 0.03835177,
+      "cublas_bf16_dequant_us": 8.37,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 2.23
+    },
+    {
+      "M": 128,
+      "N": 4096,
+      "K": 1280,
+      "triton_generic_us": 22.08,
+      "triton_tuned_us": 23.46,
+      "cuda_custom_us": 20.56,
+      "cuda_cfg": {
+        "v": [
+          128,
+          128,
+          4,
+          4,
+          2
+        ],
+        "sk": 4,
+        "us": 20.56,
+        "rel_err": 0.00166076
+      },
+      "cublas_mxfp8_us": 14.46,
+      "mxfp8_rel_err": 0.03829667,
+      "cublas_bf16_dequant_us": 10.38,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 1.62
+    },
+    {
+      "M": 512,
+      "N": 4096,
+      "K": 1280,
+      "triton_generic_us": 57.87,
+      "triton_tuned_us": 37.49,
+      "cuda_custom_us": 43.08,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 1,
+        "us": 43.08,
+        "rel_err": 0.00166111
+      },
+      "cublas_mxfp8_us": 14.72,
+      "mxfp8_rel_err": 0.03833065,
+      "cublas_bf16_dequant_us": 22.66,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 2.55
+    },
+    {
+      "M": 2048,
+      "N": 4096,
+      "K": 1280,
+      "triton_generic_us": 210.21,
+      "triton_tuned_us": 135.74,
+      "cuda_custom_us": 120.79,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 1,
+        "us": 120.79,
+        "rel_err": 0.00166107
+      },
+      "cublas_mxfp8_us": 37.24,
+      "mxfp8_rel_err": 0.03822105,
+      "cublas_bf16_dequant_us": 71.98,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 3.65
+    },
+    {
+      "M": 64,
+      "N": 5120,
+      "K": 288,
+      "triton_generic_us": 21.55,
+      "triton_tuned_us": 22.53,
+      "cuda_custom_us": 9.0,
+      "cuda_cfg": {
+        "v": [
+          128,
+          32,
+          4,
+          1,
+          2
+        ],
+        "sk": 1,
+        "us": 9.0,
+        "rel_err": 0.00166349
+      },
+      "cublas_mxfp8_us": 8.29,
+      "mxfp8_rel_err": 0.03846233,
+      "cublas_bf16_dequant_us": 6.69,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 2.72
+    },
+    {
+      "M": 128,
+      "N": 5120,
+      "K": 288,
+      "triton_generic_us": 22.05,
+      "triton_tuned_us": 22.81,
+      "cuda_custom_us": 9.53,
+      "cuda_cfg": {
+        "v": [
+          64,
+          64,
+          2,
+          2,
+          3
+        ],
+        "sk": 1,
+        "us": 9.53,
+        "rel_err": 0.00165587
+      },
+      "cublas_mxfp8_us": 8.12,
+      "mxfp8_rel_err": 0.03803094,
+      "cublas_bf16_dequant_us": 7.23,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 2.81
+    },
+    {
+      "M": 512,
+      "N": 5120,
+      "K": 288,
+      "triton_generic_us": 22.64,
+      "triton_tuned_us": 23.37,
+      "cuda_custom_us": 18.49,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 1,
+        "us": 18.49,
+        "rel_err": 0.00165964
+      },
+      "cublas_mxfp8_us": 8.36,
+      "mxfp8_rel_err": 0.0380111,
+      "cublas_bf16_dequant_us": 8.42,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 2.8
+    },
+    {
+      "M": 2048,
+      "N": 5120,
+      "K": 288,
+      "triton_generic_us": 51.75,
+      "triton_tuned_us": 39.6,
+      "cuda_custom_us": 55.44,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 1,
+        "us": 55.44,
+        "rel_err": 0.00165983
+      },
+      "cublas_mxfp8_us": 20.65,
+      "mxfp8_rel_err": 0.03823363,
+      "cublas_bf16_dequant_us": 26.78,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 1.92
+    },
+    {
+      "M": 64,
+      "N": 5120,
+      "K": 1024,
+      "triton_generic_us": 22.0,
+      "triton_tuned_us": 22.96,
+      "cuda_custom_us": 16.42,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 4,
+        "us": 16.42,
+        "rel_err": 0.00165864
+      },
+      "cublas_mxfp8_us": 12.45,
+      "mxfp8_rel_err": 0.03810279,
+      "cublas_bf16_dequant_us": 7.0,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 1.84
+    },
+    {
+      "M": 128,
+      "N": 5120,
+      "K": 1024,
+      "triton_generic_us": 21.72,
+      "triton_tuned_us": 22.87,
+      "cuda_custom_us": 20.53,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 2,
+        "us": 20.53,
+        "rel_err": 0.00165759
+      },
+      "cublas_mxfp8_us": 12.44,
+      "mxfp8_rel_err": 0.03809877,
+      "cublas_bf16_dequant_us": 10.37,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 1.84
+    },
+    {
+      "M": 512,
+      "N": 5120,
+      "K": 1024,
+      "triton_generic_us": 53.85,
+      "triton_tuned_us": 49.6,
+      "cuda_custom_us": 38.98,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 1,
+        "us": 38.98,
+        "rel_err": 0.00165814
+      },
+      "cublas_mxfp8_us": 14.49,
+      "mxfp8_rel_err": 0.03820782,
+      "cublas_bf16_dequant_us": 18.68,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 3.42
+    },
+    {
+      "M": 2048,
+      "N": 5120,
+      "K": 1024,
+      "triton_generic_us": 207.49,
+      "triton_tuned_us": 129.49,
+      "cuda_custom_us": 127.19,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 1,
+        "us": 127.19,
+        "rel_err": 0.00165776
+      },
+      "cublas_mxfp8_us": 39.25,
+      "mxfp8_rel_err": 0.03818733,
+      "cublas_bf16_dequant_us": 65.8,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 3.3
+    },
+    {
+      "M": 64,
+      "N": 25600,
+      "K": 6144,
+      "triton_generic_us": 410.79,
+      "triton_tuned_us": 426.58,
+      "cuda_custom_us": 395.04,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 1,
+        "us": 395.04,
+        "rel_err": 0.00166189
+      },
+      "cublas_mxfp8_us": 159.11,
+      "mxfp8_rel_err": 0.03813175,
+      "cublas_bf16_dequant_us": 237.51,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 2.68
+    },
+    {
+      "M": 128,
+      "N": 25600,
+      "K": 6144,
+      "triton_generic_us": 490.68,
+      "triton_tuned_us": 524.62,
+      "cuda_custom_us": 459.79,
+      "cuda_cfg": {
+        "v": [
+          64,
+          64,
+          1,
+          4,
+          2
+        ],
+        "sk": 1,
+        "us": 459.79,
+        "rel_err": 0.0016603
+      },
+      "cublas_mxfp8_us": 160.25,
+      "mxfp8_rel_err": 0.03817361,
+      "cublas_bf16_dequant_us": 233.53,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 3.27
+    },
+    {
+      "M": 512,
+      "N": 25600,
+      "K": 6144,
+      "triton_generic_us": 1518.37,
+      "triton_tuned_us": 2058.62,
+      "cuda_custom_us": 1095.26,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 2,
+        "us": 1095.26,
+        "rel_err": 0.00166152
+      },
+      "cublas_mxfp8_us": 261.64,
+      "mxfp8_rel_err": 0.03819208,
+      "cublas_bf16_dequant_us": 457.68,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 7.87
+    },
+    {
+      "M": 2048,
+      "N": 25600,
+      "K": 6144,
+      "triton_generic_us": 6058.8,
+      "triton_tuned_us": 8151.56,
+      "cuda_custom_us": 3746.79,
+      "cuda_cfg": {
+        "v": [
+          64,
+          128,
+          2,
+          4,
+          2
+        ],
+        "sk": 2,
+        "us": 3746.79,
+        "rel_err": 0.00166253
+      },
+      "cublas_mxfp8_us": 936.44,
+      "mxfp8_rel_err": 0.03820356,
+      "cublas_bf16_dequant_us": 1624.48,
+      "best_engine": "cublas_mxfp8",
+      "best_speedup_vs_tuned_triton": 8.7
+    }
+  ],
+  "summary": {
+    "cells": 24,
+    "cublas_mxfp8_wins": 19,
+    "cuda_custom_wins": 4,
+    "triton_tuned_wins": 1,
+    "geomean_best_vs_tuned_triton": 2.5,
+    "max_speedup": "8.7x at (25600,6144) M=2048 via cuBLASLt MXFP8",
+    "cuda_custom_vs_tuned_triton": "wins 17/20 measured small-shape cells; strongest at small M on skinny-N shapes (1.5-2.7x)"
+  },
+  "numerics": {
+    "cuda_custom": "rel_err identical to Triton kernels (same per-group fp32 accumulation): ~1.66e-3 vs fp32 reference = bf16 output floor",
+    "cublas_mxfp8_synthetic_scales": "~3.8e-2 due to UE8M0 rounding of random fp32 test scales (requantization artifact of the benchmark, not the engine)",
+    "cublas_mxfp8_po2_scales": "1.66e-3 (= Triton floor) with power-of-two scales, verified at 3 shapes; the deployed checkpoint declares scale_fmt=ue8m0, so this is the realistic case"
+  },
+  "caveats": [
+    "Isolated-kernel timings measured alongside an idle serving container; absolute us noisier than the dedicated fp8 sweep, cross-engine ratios within the same run are the signal.",
+    "cublas_mxfp8 timing covers the GEMM only: production integration must pre-block weight scales at load (one-time) and fuse activation quant to e4m3+e8m0-blocked layout per call; that fused-quant cost is not measured here.",
+    "cuda_custom writes fp32 split-K partials reduced by torch.sum in the timing loop for sk>1 cells (included in its time).",
+    "No serving integration performed; no end-to-end claim."
+  ],
+  "files": {
+    "kernel": "sm120-work/cuda-w8a8/w8a8_sm120.cu",
+    "cublaslt": "sm120-work/cuda-w8a8/cublaslt_mxfp8.cu",
+    "harnesses": [
+      "bench_cuda_w8a8.py",
+      "bench_mxfp8.py",
+      "check_po2.py"
+    ],
+    "raw": [
+      "full-results.jsonl",
+      "full-results-25600.jsonl",
+      "mxfp8-results2.jsonl",
+      "mxfp8-results3.jsonl"
+    ]
+  },
+  "correctness_vs_triton": {
+    "method": "check_vs_triton.py: identical quantized inputs through tuned Triton (reference), generic Triton (noise yardstick), 4 custom-CUDA variants x split-K {1,4,8}, and cuBLASLt MXFP8 with po2 (checkpoint-native ue8m0) scales; 6 shapes x M in {64,100,128,512,777,2048} incl. ragged tails.",
+    "comparisons": 468,
+    "failures": 0,
+    "pass_bar": "rel L2 <= 2e-3 and max_abs <= max(4x generic-vs-tuned disagreement, 1e-4)",
+    "observed": "Most cells bitwise-identical to tuned Triton bf16 output (rel 0.0, max_abs 0.0); worst rel 7.8e-6 and 1.3e-5 at (25600,6144), same order as generic-vs-tuned Triton on identical inputs (up to 6.5e-6).",
+    "raw": "sm120-work/cuda-w8a8/check-vs-triton.jsonl"
+  }
+}

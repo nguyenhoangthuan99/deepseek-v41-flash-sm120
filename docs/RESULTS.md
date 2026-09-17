@@ -89,6 +89,15 @@ In-server validation (same 3-round protocol, rebuilt image): **C32 aggregate 1,3
 Remaining profiled candidates, not pursued here: the MXFP4 MoE grouped GEMM (~116 µs mean at C32; FlashInfer-internal, no exposed tuning), the DSpark `_candidate_mask/scores` kernels (~66 ms per C32 window), and the prefill `_hc_mix_stats_partial` hyperconnection kernel (~102 µs mean).
 
 
+### Custom CUDA / cuBLAS engine comparison (isolated kernels, 2026-09-17)
+
+Structured record: [results/cuda-w8a8-engine-comparison.json](../results/cuda-w8a8-engine-comparison.json). To bound how far the Triton kernel is from this hardware's ceiling, two additional engines were written and benchmarked on the six shapes × M ∈ {64, 128, 512, 2048}: a hand-written `mma.sync.m16n8k32` e4m3 CUDA kernel with per-32-group FP32 scale-accumulation (the Triton kernel's numerics contract) autotuned over tile/split-K variants, and a cuBLASLt MXFP8 path (`VEC32_UE8M0` block scaling) exploiting the fact that the checkpoint's 32×32 UE8M0 weight-block scales expand losslessly to MX's 1×32 groups.
+
+- **cuBLASLt MXFP8 won 19/24 cells** (up to 8.7× over tuned Triton at (25600,6144) M=2048, geometric-mean best-engine speedup 2.5×), the custom CUDA kernel 4/24 (small-M skinny-N cells, 1.5–2.7×), tuned Triton 1/24.
+- **Correctness vs Triton:** 468 pairwise output comparisons on identical quantized inputs (including ragged M=100/777 tails) with **zero failures**; most cells bitwise-identical to the tuned Triton bf16 output, worst rel-L2 7.8e-6 — the same disagreement class as generic-vs-tuned Triton on the same inputs. With the benchmark's random (non-power-of-two) synthetic scales the MXFP8 path shows ~3.8e-2 UE8M0 requantization error; the deployed checkpoint declares `scale_fmt=ue8m0`, where the expansion is exact.
+- **Not integrated into serving:** these are isolated-kernel measurements alongside an idle server. The MXFP8 path additionally needs one-time weight-scale re-blocking at load and a fused activation-quant epilogue before its GEMM gain translates end-to-end. Kernel sources and raw data live in the private workspace (`sm120-work/cuda-w8a8/`); this kit ships the structured results only.
+
+
 
 ## Context and capacity
 
