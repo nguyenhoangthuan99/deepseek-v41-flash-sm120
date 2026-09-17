@@ -19,6 +19,11 @@ MAX_RUNNING=${MAX_RUNNING:-32}
 DECODE_STEPS=${DECODE_STEPS:-4}
 RANDOM_SEED=${RANDOM_SEED:-599261575}
 NCCL_P2P_LEVEL=${NCCL_P2P_LEVEL:-PHB}
+# Optional NCCL protocol override. Empty (default) keeps NCCL's tuner.
+# Measured in-server on this PHB PCIe topology (3-round medians, 768-tok greedy):
+#   NCCL_PROTO=Simple: C32 aggregate +14%, but C1 -24% and C4 -17%; C16 and
+#   32k-prefill TTFT unchanged. Opt in only for saturated-batch serving.
+NCCL_PROTO=${NCCL_PROTO:-}
 DSV41_SM120_DISABLE=${DSV41_SM120_DISABLE:-1}
 DSV41_SM120_FP8_DISABLE=${DSV41_SM120_FP8_DISABLE:-0}
 STRICT=${STRICT:-1}
@@ -184,8 +189,9 @@ launch_args() {
         --env "DSV41_SM120_STRICT=$STRICT"
         --env "DSV41_SM120_DISABLE=$DSV41_SM120_DISABLE"
         --env "DSV41_SM120_FP8_DISABLE=$DSV41_SM120_FP8_DISABLE"
-        --env "NCCL_P2P_LEVEL=$NCCL_P2P_LEVEL"
-        --env SGLANG_SM120_FLASHMLA_BACKEND=flashinfer
+        --env "NCCL_P2P_LEVEL=$NCCL_P2P_LEVEL")
+    if [[ -n "$NCCL_PROTO" ]]; then RUN+=(--env "NCCL_PROTO=$NCCL_PROTO"); fi
+    RUN+=(--env SGLANG_SM120_FLASHMLA_BACKEND=flashinfer
         --env SGLANG_RAGGED_VERIFY_MODE=static
         --env SGLANG_SIMULATE_ACC_LEN=-1
         --env SGLANG_DSPARK_ENABLE_SPS_RECORD=0

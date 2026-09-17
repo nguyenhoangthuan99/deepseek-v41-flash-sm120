@@ -47,6 +47,7 @@ All file paths internal to the launcher resolve relative to `deploy.sh`, not the
 | `DECODE_STEPS` | `4` | Continuous decode steps. |
 | `RANDOM_SEED` | `599261575` | Server seed; not a promise of bitwise reproducibility across backends. |
 | `NCCL_P2P_LEVEL` | `PHB` | Measured host-topology policy. Host-specific performance may differ; not a universal NCCL recommendation. |
+| `NCCL_PROTO` | *(empty)* | Empty keeps NCCL's protocol tuner (recommended). `Simple` was measured on this PHB PCIe topology at +14% C32 aggregate decode but −24% C1 and −17% C4; C16 and 32k-prefill TTFT unchanged. Opt-in for saturated-batch serving only; not a universal NCCL recommendation. |
 | `DSV41_SM120_DISABLE` | `1` | Disable the legacy TileLang sparse-attention override. Native image uses `1`; hybrid rollback requires `0`. Does **not** disable MoE or dense-FP8 tuning. |
 | `DSV41_SM120_FP8_DISABLE` | `0` | Keep runtime dense block-FP8 tuning enabled. `1` disables that adapter; the quoted performance does not apply. |
 | `STRICT` | `1` | Raise on a legacy TileLang attention fallback failure. It is not a global startup-hook guarantee; native attention normally bypasses that adapter. |

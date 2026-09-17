@@ -47,6 +47,26 @@ Block sizes **1, 3, 5, and 8** were screened. Block 3 was the balanced choice; b
 
 Compact/ragged DSpark failed an **Engram equal-block assertion**. The failure means that experiment is not a working performance mode in this kit, not that the assertion should be removed. The deployed policy remains static equal-block DSpark. No compact-mode flag, error suppression, or assertion bypass is part of the recipe. Hybrid attention plus DSpark also is not validated.
 
+## NCCL protocol A/B (2026-09-17, packaged-image serving)
+
+A live GPU-trace profile of the packaged-image deployment attributed **53% of C32-decode and 55% of 32k-prefill GPU busy time to NCCL TP8 AllReduce** (`ncclDevKernel_AllReduce_Sum_bf16_RING_LL`). Standalone `torchrun` microbenchmarks at the server's exact payload sizes showed NCCL's protocol tuner selecting `LL` at ~1.3 MB where `Simple` is ~1.7x faster; `LL` halves wire efficiency at large sizes by design.
+
+An in-server A/B (three rounds per leg, medians, cache flushed per cell, 768-token greedy requests; the C4/C16 legs ran after the C1/C32 legs, one restart apart; structured record in [results/nccl-proto-ab.json](../results/nccl-proto-ab.json)):
+
+| Metric | Tuner default | `NCCL_PROTO=Simple` | Change |
+| --- | ---: | ---: | --- |
+| C1 tok/s | 194.1 | 148.1 | −24% |
+| C4 aggregate tok/s | 492.0 | 408.2 | −17% |
+| C16 aggregate tok/s | 953.2 | 965.9 | +1% |
+| C32 aggregate tok/s | 1,330.5 | 1,518.4 | +14% |
+| C32 median per-request tok/s | 44.0 | 51.3 | +17% |
+| 32k-prefill TTFT | 5.3 s | 5.3 s | unchanged |
+
+The per-step AllReduce payload scales with batched tokens, so the LL/Simple crossover lands between C16 and C32 (~0.7–1.3 MB). **The kit default keeps NCCL's tuner**: `Simple` wins only near the `MAX_RUNNING=32` saturation point and loses light/moderate concurrency. Deployments with reliably saturated batches can opt in with `NCCL_PROTO=Simple`. The protocol applies per process; NCCL offers no per-message-size override. This is a topology-specific observation on PCIe PHB without NVLink; do not generalize it to NVLink hosts.
+
+The same investigation **rejected** SGLang's custom P2P allreduce for this topology: with the NVLink policy gate bypassed experimentally, its one-shot/two-shot kernels ran 15–30x slower than NCCL over PCIe host bridges, confirming the upstream gate. No gate change ships in this kit.
+
+
 ## Context and capacity
 
 | Observation | Interpretation |

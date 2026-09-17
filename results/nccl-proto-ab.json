@@ -1,0 +1,97 @@
+{
+  "kind": "nccl_proto_ab",
+  "date": "2026-09-17",
+  "context": "Packaged-image serving (deepseek-v41-flash-sm120:latest), TP8/EP8 flashinfer_mxfp4, DSpark block 3, NCCL_P2P_LEVEL=PHB, PCIe PHB topology without NVLink.",
+  "motivation": "Live torch-profiler traces attributed 53% (decode C32) and 55% (32k prefill) of GPU busy time to ncclDevKernel_AllReduce_Sum_bf16_RING_LL. Standalone microbenchmarks showed the NCCL tuner picking LL at ~1.3MB where Simple is ~1.7x faster.",
+  "protocol": "3 rounds per leg, medians; 768-output-token greedy requests, ignore_eos, cache flushed per cell; C4/C16 legs ran after the C1/C32 legs, one server restart apart.",
+  "metrics": {
+    "c16_agg": {
+      "default": 953.2,
+      "simple": 965.9,
+      "ratio": 1.013
+    },
+    "c16_med": {
+      "default": 62.2,
+      "simple": 64.2,
+      "ratio": 1.032
+    },
+    "c1_agg": {
+      "default": 194.1,
+      "simple": 148.1,
+      "ratio": 0.763
+    },
+    "c1_med": {
+      "default": 199.6,
+      "simple": 151.2,
+      "ratio": 0.758
+    },
+    "c32_agg": {
+      "default": 1330.5,
+      "simple": 1518.4,
+      "ratio": 1.141
+    },
+    "c32_med": {
+      "default": 44.0,
+      "simple": 51.3,
+      "ratio": 1.166
+    },
+    "c4_agg": {
+      "default": 492.0,
+      "simple": 408.2,
+      "ratio": 0.83
+    },
+    "c4_med": {
+      "default": 131.2,
+      "simple": 105.5,
+      "ratio": 0.804
+    },
+    "ttft32k_s": {
+      "default": 5.31,
+      "simple": 5.27,
+      "ratio": 0.992
+    }
+  },
+  "microbenchmarks": {
+    "nccl_proto_sweep_us_pipelined": {
+      "40KB": {
+        "default": 33.6,
+        "LL": 31.2,
+        "Simple": 72.4
+      },
+      "1.3MB": {
+        "default": 273.7,
+        "LL": 261.2,
+        "Simple": 157.3
+      },
+      "21MB": {
+        "default": 2010.3,
+        "LL": 4000.6,
+        "Simple": 1984.9
+      }
+    },
+    "custom_p2p_allreduce_rejected": {
+      "method": "NVLink policy gate bypassed experimentally in a disposable container; numerics verified (rel err ~4e-3 vs NCCL, bf16 reduction order)",
+      "us": {
+        "40KB": {
+          "nccl": 22.8,
+          "custom": 411.9
+        },
+        "1.3MB": {
+          "nccl": 261.4,
+          "custom": 3673.4
+        },
+        "5MB": {
+          "nccl": 532.0,
+          "custom": 15845.5
+        }
+      },
+      "conclusion": "One-shot/two-shot P2P kernels are 15-30x slower than NCCL over PCIe host bridges; upstream NVLink gate is correct for this topology."
+    }
+  },
+  "decision": "Kit default keeps the NCCL protocol tuner (NCCL_PROTO empty). Simple is a documented opt-in for saturated-batch serving only.",
+  "caveats": [
+    "Topology-specific (PCIe PHB, no NVLink); not transferable to NVLink hosts.",
+    "NCCL_PROTO applies per process; no per-message-size override exists.",
+    "Aggregate rates are batch output sums over wall time, not per-request decode rates."
+  ]
+}
