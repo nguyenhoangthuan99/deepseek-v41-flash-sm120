@@ -78,6 +78,17 @@ Structured record: [results/overlap-dp-attention-exploration.json](../results/ov
 These are topology- and workload-specific measurements of the packaged image on the PHB PCIe host; none of them changes the kit defaults.
 
 
+## Kernel profile and large-M dense-FP8 tuning (2026-09-17)
+
+Per-kernel analysis of the live traces showed the dense block-FP8 GEMM running the tuned kernel only at small M: the shipped configuration table covered M ∈ {1,4,16,32}, so C32 decode (M≈128) and prefill chunks (M≈2048) fell back to the generic Triton kernel — 627 ms of C32-decode and 931 ms of 32k-prefill GPU kernel time. DeepGEMM cannot serve these layers: the checkpoint is quantized with 32×32 weight blocks while DeepGEMM's block-FP8 contract is 1×128/128×128 (SGLang falls back to Triton at `fp8_utils.py` `block_size == [128,128]` gate), which is also why this kit tunes the Triton kernel in the first place.
+
+The existing sweep harness was re-run over M ∈ {64,128,512,2048} (960 benchmarks, 840 bounded numerical/CUDA-graph checks, all passed). Sixteen winners at ≥1.1× over the generic kernel were merged into `runtime/fp8_sm120_configs.json` (isolated-kernel speedups up to 6.0× at (576,5120) M=64 and 3.4× at (1792,5120) M=64). The (25600,6144) shape and most M=2048 points stayed untuned (<1.1×); the adapter preserves the upstream kernel outside the tuned domain.
+
+In-server validation (same 3-round protocol, rebuilt image): **C32 aggregate 1,330.5 → 1,408.7 tok/s (+6%)**, C1 and 32k-prefill TTFT unchanged within run-to-run noise (a C1 recheck spanned 186–203 tok/s across rounds). These are packaged-image serving measurements on the PHB PCIe host, not a general claim.
+
+Remaining profiled candidates, not pursued here: the MXFP4 MoE grouped GEMM (~116 µs mean at C32; FlashInfer-internal, no exposed tuning), the DSpark `_candidate_mask/scores` kernels (~66 ms per C32 window), and the prefill `_hc_mix_stats_partial` hyperconnection kernel (~102 µs mean).
+
+
 
 ## Context and capacity
 

@@ -1,0 +1,63 @@
+{
+  "kind": "fp8_large_m_tuning",
+  "date": "2026-09-17",
+  "finding": "Shipped SM120 FP8 config table covered M in {1,4,16,32}; C32 decode (M~128) and prefill chunks (M~2048) ran the untuned generic Triton kernel (627ms/C32 window, 931ms/32k prefill on TP-0).",
+  "why_not_deepgemm": "Checkpoint weight_block_size=[32,32]; DeepGEMM block-FP8 contract is 1x128/128x128 (fp8_utils.py block_supported gate) -> Triton fallback. DeepGEMM IS used for the fp4 indexer (sm120_fp4_mqa_logits).",
+  "sweep": {
+    "harness": "sm120-work/bench_sm120_fp8.py",
+    "jsonl": "sm120-work/fp8-sweep-largeM.jsonl",
+    "m": [
+      64,
+      128,
+      512,
+      2048
+    ],
+    "benchmarks": 960,
+    "checks": 840,
+    "checks_failed": 0,
+    "winners_merged": 16,
+    "threshold": 1.1,
+    "top_speedups": {
+      "576x5120 M=64": 6.02,
+      "576x5120 M=128": 4.37,
+      "1792x5120 M=64": 3.41,
+      "1792x5120 M=128": 2.34
+    },
+    "skipped": "25600x6144 all M; most M=2048 (<1.1x)"
+  },
+  "image": "deepseek-v41-flash-sm120:latest sha256:0dfcead0a95e...  (check-image passed)",
+  "in_server_validation": {
+    "c1_agg": {
+      "baseline": 194.1,
+      "large_m_tuned": 184.0,
+      "ratio": 0.948
+    },
+    "c1_med": {
+      "baseline": 199.6,
+      "large_m_tuned": 189.1,
+      "ratio": 0.947
+    },
+    "c32_agg": {
+      "baseline": 1330.5,
+      "large_m_tuned": 1408.7,
+      "ratio": 1.059
+    },
+    "c32_med": {
+      "baseline": 44.0,
+      "large_m_tuned": 46.5,
+      "ratio": 1.057
+    },
+    "ttft32k_s": {
+      "baseline": 5.31,
+      "large_m_tuned": 5.25,
+      "ratio": 0.989
+    }
+  },
+  "c1_recheck_tps": [
+    186.4,
+    187.3,
+    202.8
+  ],
+  "quality_smoke": "17*23 -> 391",
+  "verdict": "Kept: +6% C32 aggregate, C1/TTFT unchanged within noise."
+}

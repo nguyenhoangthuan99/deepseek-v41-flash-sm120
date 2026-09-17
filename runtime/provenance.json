@@ -13,9 +13,9 @@
   },
   {
     "file": "runtime/fp8_sm120_configs.json",
-    "source_sha256": "7bfe944dae4e4c40d9b87cd1e58ab2faaf9e7a99666ee68e1b64ef2c151bb15f",
-    "packaged_sha256": "7bfe944dae4e4c40d9b87cd1e58ab2faaf9e7a99666ee68e1b64ef2c151bb15f",
-    "change": "none"
+    "source_sha256": "906de4a9e7c43da5906d70ef2ceb10946d9f47170722342a3b5dc7edb911b460",
+    "packaged_sha256": "906de4a9e7c43da5906d70ef2ceb10946d9f47170722342a3b5dc7edb911b460",
+    "change": "Extended tuned M domain with 16 large-M winners (M in 64/128/512(/2048), >=1.1x, 840 numerical checks passed; sweep fp8-sweep-largeM.jsonl 2026-09-17). N=25600,K=6144 and remaining M=2048 points stay untuned (<1.1x)."
   },
   {
     "file": "runtime/sglang_sm120_patch.py",
