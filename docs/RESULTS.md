@@ -66,6 +66,18 @@ The per-step AllReduce payload scales with batched tokens, so the LL/Simple cros
 
 The same investigation **rejected** SGLang's custom P2P allreduce for this topology: with the NVLink policy gate bypassed experimentally, its one-shot/two-shot kernels ran 15–30x slower than NCCL over PCIe host bridges, confirming the upstream gate. No gate change ships in this kit.
 
+## Batch-overlap and DP-attention exploration (2026-09-17)
+
+Structured record: [results/overlap-dp-attention-exploration.json](../results/overlap-dp-attention-exploration.json). Same protocol as the NCCL A/B (3-round medians, 768-token greedy requests).
+
+- **Two-batch overlap: blocked.** The pinned tree rejects `--enable-two-batch-overlap` for DeepSeek-V4.1 at startup (`deepseek_v4_hook.py` unsupported-feature raise), and its TBO implementation is prefill-only at this commit (decode raises `NotImplementedError`), so it could not have addressed the decode AllReduce share regardless.
+- **Single-batch overlap: skipped.** Its overlap never activates with the `flashinfer_mxfp4` runner, and on SM120 the fallback reroutes shared-expert computation through a dispatcher-hook path untested with this MoE method. Zero expected gain, nonzero correctness risk.
+- **DP attention (`--enable-dp-attention --dp-size 8 --enable-dp-lm-head --moe-dense-tp-size 1`): ran, rejected as default.** Measured against the TP8 baseline: C1 −68% (194→62 tok/s), C4 −52%, C16 −9%, **C32 +16%** (1,330→1,546 tok/s), 32k-prefill TTFT 5.3→8.0 s. A single request's attention runs on one GPU under DP, so light-load latency collapses while saturated throughput improves.
+- **KV capacity observation (from launch logs):** TP8 attention replicates the KV pool on all 8 ranks (12.53 GB, 6,868,736 full-KV tokens each — one unique copy). DP attention shards it: 5.07 GB and 2,078,720 tokens per rank (replicated attention/dense weights and DP graph reserves shrink the per-rank budget), giving **~16.6 M unique tokens aggregate (≈2.4×)** with a ~2.08 M-token single-request ceiling. DP attention is therefore the right shape for saturated-batch or KV-capacity-bound serving, not for this mixed-load deployment.
+
+These are topology- and workload-specific measurements of the packaged image on the PHB PCIe host; none of them changes the kit defaults.
+
+
 
 ## Context and capacity
 

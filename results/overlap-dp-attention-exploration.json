@@ -1,0 +1,94 @@
+{
+  "kind": "overlap_and_dp_attention_exploration",
+  "date": "2026-09-17",
+  "baseline": "Packaged-image serving, TP8/EP8 flashinfer_mxfp4, DSpark block 3, PHB, NCCL tuner default; 3-round medians, 768-token greedy, cache flushed per cell.",
+  "two_batch_overlap": {
+    "verdict": "BLOCKED at startup",
+    "evidence": [
+      "srt/arg_groups/deepseek_v4_hook.py:273-289 raises ValueError: DeepSeek-V4.1 does not support two-batch overlap yet",
+      "srt/arg_groups/validation_hook.py:426-447 additionally requires --enable-dp-attention when moe_a2a_backend=none",
+      "srt/batch_overlap/operations_strategy.py:171-183 TBO is prefill(EXTEND)-only; decode raises NotImplementedError"
+    ],
+    "note": "Even absent the gate, TBO could not address the C32 decode AllReduce share; decode TBO is unimplemented upstream at this commit."
+  },
+  "single_batch_overlap": {
+    "verdict": "SKIPPED (no expected gain, correctness-sensitive untested path)",
+    "evidence": [
+      "SBO combine/down-GEMM overlap activates only for flashinfer_cutedsl or non-Blackwell deep_gemm runners, not flashinfer_mxfp4",
+      "On Blackwell (SM120) the fallback path forces fuse_shared_experts_inside_sbo=True, rerouting shared experts through dispatcher hooks untested with Mxfp4FlashinferCutlassMoEMethod + a2a=none",
+      "Enabling SBO force-disables shared-experts fusion"
+    ]
+  },
+  "dp_attention": {
+    "verdict": "RAN; rejected for this mixed-load deployment",
+    "launch": "baseline args + --enable-dp-attention --dp-size 8 --enable-dp-lm-head --moe-dense-tp-size 1, max-running-requests 256 (=32/rank), chunked-prefill 16384 (=2048/rank)",
+    "metrics": {
+      "c16_agg": {
+        "tp8_baseline": 953.2,
+        "dp_attn": 865.6,
+        "ratio": 0.908
+      },
+      "c16_med": {
+        "tp8_baseline": 62.2,
+        "dp_attn": 59.1,
+        "ratio": 0.95
+      },
+      "c1_agg": {
+        "tp8_baseline": 194.1,
+        "dp_attn": 61.8,
+        "ratio": 0.318
+      },
+      "c1_med": {
+        "tp8_baseline": 199.6,
+        "dp_attn": 62.3,
+        "ratio": 0.312
+      },
+      "c32_agg": {
+        "tp8_baseline": 1330.5,
+        "dp_attn": 1546.4,
+        "ratio": 1.162
+      },
+      "c32_med": {
+        "tp8_baseline": 44.0,
+        "dp_attn": 53.9,
+        "ratio": 1.225
+      },
+      "c4_agg": {
+        "tp8_baseline": 492.0,
+        "dp_attn": 237.7,
+        "ratio": 0.483
+      },
+      "c4_med": {
+        "tp8_baseline": 131.2,
+        "dp_attn": 63.3,
+        "ratio": 0.482
+      },
+      "ttft32k_s": {
+        "tp8_baseline": 5.31,
+        "dp_attn": 8.02,
+        "ratio": 1.51
+      }
+    },
+    "kv_pools_per_rank": {
+      "tp8_baseline": {
+        "kv_budget_gb": 12.53,
+        "full_tokens": 6868736,
+        "swa": 82432,
+        "c4": 1717184,
+        "c128": 53662,
+        "note": "identical (replicated) on all 8 ranks; unique node capacity 6.87M tokens"
+      },
+      "dp_attention": {
+        "kv_budget_gb": 5.07,
+        "full_tokens": 2078720,
+        "swa": 82432,
+        "c4": 519680,
+        "c128": 16240,
+        "note": "per-rank shard; aggregate unique ~16.6M tokens (2.4x), max single request ~2.08M tokens; per-rank budget drops from replicated attention/dense weights and DP graph reserves"
+      }
+    },
+    "quality_smoke": "17*23 -> 391 (greedy); all bench requests returned exactly 768 tokens",
+    "conclusion": "DP attention trades light-load speed for saturation and KV capacity: C1 -68%, C4 -52%, C16 -9%, C32 +16%, 32k TTFT 5.3->8.0s. A single request runs attention on one GPU. Kept TP8 attention."
+  },
+  "decision": "Deployment and kit stay on TP8 attention + NCCL tuner default. DP attention documented as a capacity-oriented alternative for saturated-batch or KV-heavy serving."
+}
