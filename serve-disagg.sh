@@ -27,12 +27,17 @@ PLAN="$ROOT/scripts/disagg_plan.py"
 # override (MODEL_DIR, IMAGE, seed, BIND_HOST, ...) so disagg roles and the
 # aggregated mode launch with the exact validated stack, overriding only the
 # disaggregation-specific and anti-blocking knobs on top.
+# Inherit the best config as DEFAULTS ONLY: parse `export VAR=value` lines and set
+# each var unless the caller already set it. Precedence: caller env > ENV_FILE >
+# deploy.sh defaults. (A plain `source` would clobber e.g. SPEC=0 from the CLI.)
 ENV_FILE=${ENV_FILE:-$ROOT/deploy.sh.tmp}
 if [[ -f "$ENV_FILE" ]]; then
-    set -a
-    # shellcheck source=/dev/null
-    source "$ENV_FILE"
-    set +a
+    while IFS= read -r _line; do
+        [[ "$_line" =~ ^[[:space:]]*export[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]] || continue
+        _var=${BASH_REMATCH[1]}; _val=${BASH_REMATCH[2]}
+        _val=${_val%\"}; _val=${_val#\"}; _val=${_val%\'}; _val=${_val#\'}
+        [[ -n "${!_var+x}" ]] || export "$_var=$_val"
+    done < "$ENV_FILE"
 fi
 
 # Topology / transport (only used by the real disagg roles).
@@ -61,10 +66,11 @@ serve-disagg.sh COMMAND
 
   aggregated [start|restart]
                    RUNNABLE FIX for this 8-GPU box. Relaunches the validated
-                   config with the anti-blocking scheduler knobs: DSPARK off,
-                   mixed-chunk on, num-continuous-decode-steps=1,
+                   config keeping DSPARK ON (inherited) plus spec-compatible
+                   anti-blocking knobs: num-continuous-decode-steps=1,
                    chunked-prefill-size=1024, schedule-conservativeness=0.8.
-                   Reuses deploy.sh (needs MODEL_DIR; run on the GPU host).
+                   mixed-chunk is enabled only if you pass SPEC=0 (it does not
+                   compose with spec on a single pool). Needs MODEL_DIR; GPU host.
 
   disagg [--emit]  Attempt PD disaggregation for PREFILL_GPUS+DECODE_GPUS (default
                    4+4). Runs the weight-fit preflight and the IB/RDMA check; on
@@ -146,8 +152,15 @@ case "$cmd" in
     aggregated)
         action=${1:-restart}
         [[ "$action" =~ ^(start|restart)$ ]] || fail "aggregated takes start|restart"
-        echo "Launching aggregated low-latency config (DSPARK off, mixed-chunk on, decode-steps=1)..."
-        exec env SPEC=0 MIXED_CHUNK=1 DECODE_STEPS=1 CHUNKED_PREFILL=1024 \
+        # Aggregated single-pool fallback (used when disagg does not fit). Keep the
+        # inherited best speculation (DSPARK) ON; apply only spec-compatible
+        # anti-blocking knobs. mixed-chunk overlap does NOT compose with spec on one
+        # pool, so enable it only when the caller explicitly drops spec (SPEC=0).
+        # In real disaggregation this tradeoff is gone: prefill/decode are separate
+        # pools, so DSPARK stays on the decode pool with nothing to block it.
+        mixed=0; [[ "${SPEC:-1}" == 0 ]] && mixed=1
+        echo "Launching aggregated low-latency config (DSPARK=${SPEC:-1}, mixed-chunk=$mixed, decode-steps=1, chunk=1024, conserv=0.8)..."
+        exec env MIXED_CHUNK="$mixed" DECODE_STEPS=1 CHUNKED_PREFILL=1024 \
             SCHED_CONSERV=0.8 "$DEPLOY" "$action"
         ;;
     disagg)

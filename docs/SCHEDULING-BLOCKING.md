@@ -52,12 +52,15 @@ PCIe-PHB node. Viable disaggregation = **8+8 across two nodes with IB**.
 
 - **Single 8-GPU node (the fix that runs here):**
   `./serve-disagg.sh aggregated restart`
-  Relaunches the validated best config with anti-blocking knobs: DSPARK off,
-  `--enable-mixed-chunk`, `--num-continuous-decode-steps 1`,
-  `--chunked-prefill-size 1024`, `--schedule-conservativeness 0.8`. Trades some
-  single-stream decode throughput for far less staggered-arrival blocking; A/B it.
-- **Two nodes + IB (real disaggregation):**
+  Keeps **DSPARK on** (inherited) and applies spec-compatible anti-blocking knobs:
+  `--num-continuous-decode-steps 1`, `--chunked-prefill-size 1024`,
+  `--schedule-conservativeness 0.8`. `--enable-mixed-chunk` overlap does not
+  compose with speculative decoding on one shared pool, so it is enabled only if
+  you drop spec (`SPEC=0 ./serve-disagg.sh aggregated`). A/B both.
+- **Two nodes + IB (real disaggregation) — no mixed-chunk needed:**
   `PREFILL_GPUS=8 DECODE_GPUS=8 DISAGG_IB_DEVICE=mlx5_0 ./serve-disagg.sh disagg --emit`
-  then launch `prefill` / `decode` / `lb` roles. Both pools **inherit the full
+  then launch `prefill` / `decode` / `lb` roles. Disaggregation removes the
+  prefill<->decode conflict structurally, so **mixed-chunk is moot** and there is
+  no spec tradeoff: prefill and decode are separate pools. Both **inherit the full
   validated stack** (flashinfer_mxfp4 MoE, fp4 indexer, SM120 block-FP8, PHB, 1M
-  context, parsers); speculation (DSPARK) stays on the decode pool only.
+  context, parsers); speculation (DSPARK) stays on the decode pool at full benefit.
