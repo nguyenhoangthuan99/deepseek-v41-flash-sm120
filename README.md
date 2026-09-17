@@ -27,7 +27,7 @@ Both Docker targets were built from this repository and passed CPU-only package/
 - Linux x86-64 with eight available RTX PRO 6000 Blackwell Server Edition GPUs and an NVIDIA driver compatible with the pinned CUDA 13 runtime.
 - Docker with BuildKit and the NVIDIA Container Toolkit configured for GPU containers; permission to use Docker. Building the image does not require model weights or a GPU.
 - Git, Bash, `flock` (util-linux), `nvidia-smi`, and `tmux`; Python 3.9+ for preflight and the API smoke client. The Docker build supplies its own compiler and Python build dependencies.
-- Access to this private repository and network access to the pinned source/image/package dependencies during the build.
+- Network access to this public repository and the pinned source/image/package dependencies during the build.
 - An existing, complete checkpoint on locally mounted or shared storage with sufficient RAM/storage bandwidth for loading. **You supply `MODEL_DIR`; the kit does not download weights.** Reserve all eight GPUs and adequate host RAM/disk space for the checkpoint and image build.
 
 ## Clone, build, and launch
