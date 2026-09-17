@@ -1,0 +1,50 @@
+[
+  {
+    "file": "runtime/sitecustomize.py",
+    "source_sha256": "367a4ce43eae5a84daea606cb59ba024934046755103fb6c8de06cc9531eecef",
+    "packaged_sha256": "367a4ce43eae5a84daea606cb59ba024934046755103fb6c8de06cc9531eecef",
+    "change": "none"
+  },
+  {
+    "file": "runtime/sm120_fp8_patch.py",
+    "source_sha256": "6c1213f3ecbe80e60f197d4e52923a4e7f2022c1123ae9c1d66671b91549798d",
+    "packaged_sha256": "6c1213f3ecbe80e60f197d4e52923a4e7f2022c1123ae9c1d66671b91549798d",
+    "change": "none"
+  },
+  {
+    "file": "runtime/fp8_sm120_configs.json",
+    "source_sha256": "7bfe944dae4e4c40d9b87cd1e58ab2faaf9e7a99666ee68e1b64ef2c151bb15f",
+    "packaged_sha256": "7bfe944dae4e4c40d9b87cd1e58ab2faaf9e7a99666ee68e1b64ef2c151bb15f",
+    "change": "none"
+  },
+  {
+    "file": "runtime/sglang_sm120_patch.py",
+    "source_sha256": "88b72d6dbc7a97c29a8941f19610b68d5faf61d4658c973f6ef90a83ba8857d9",
+    "packaged_sha256": "37ba288c5c62fccaaeb526066a324bfd036fd9976d911740f8de9a6d4e1ba262",
+    "change": "Documentation-only deployment path replacement"
+  },
+  {
+    "file": "runtime/sparse_attn_paged_dual_sm120.py",
+    "source_sha256": "86b29c53106c2f3744b8ba370a0bedb33575897546d45fcad03b9c5e5879b024",
+    "packaged_sha256": "86b29c53106c2f3744b8ba370a0bedb33575897546d45fcad03b9c5e5879b024",
+    "change": "none"
+  },
+  {
+    "file": "runtime/sparse_attn_paged_sm120.py",
+    "source_sha256": "1d9a718af97091ef8af1a59a6e896f21791294137ba736fe89fc16365ce4bdde",
+    "packaged_sha256": "1d9a718af97091ef8af1a59a6e896f21791294137ba736fe89fc16365ce4bdde",
+    "change": "none"
+  },
+  {
+    "file": "runtime/sparse_attn_sm120.py",
+    "source_sha256": "82444d89113d6761b5c5c21a3466e7e8550f7f6d6eb04a7911847b2fe2c90cf9",
+    "packaged_sha256": "82444d89113d6761b5c5c21a3466e7e8550f7f6d6eb04a7911847b2fe2c90cf9",
+    "change": "none"
+  },
+  {
+    "file": "runtime/sparse_attn_sm120_split.py",
+    "source_sha256": "5dc0273797cc7b512b6fc021a813d62d565f8fe0380068a6619277b753cacbb1",
+    "packaged_sha256": "5dc0273797cc7b512b6fc021a813d62d565f8fe0380068a6619277b753cacbb1",
+    "change": "none"
+  }
+]

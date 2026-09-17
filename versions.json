@@ -1,0 +1,26 @@
+{
+  "sglang": {
+    "repository": "https://github.com/nguyenhoangthuan99/sglang.git",
+    "commit": "da64c5cbb8cf6bfd39be19da43573fdfd484c43a",
+    "version": "0.0.0.dev1+gda64c5cbb"
+  },
+  "base_image": "lmsysorg/sglang@sha256:4a5d132a06a77c8331e15845f2e925adc788b00105097ad55409afa3f4fa4860",
+  "tilelang": "0.1.14",
+  "apache_tvm_ffi": "0.1.11",
+  "torch": "2.13.0+cu130",
+  "triton": "3.7.1",
+  "flashinfer_jit_cache": "0.6.18+cu130",
+  "flashinfer": {
+    "version": "0.6.18",
+    "pr": 5121,
+    "commit": "24804035ad9d8372e5883007f2d391986f17314d",
+    "source_before_sha256": "f7cb21078f1f6d997a3f96f1513eaa8b923ca57b4d17156952ec476e56d60cad",
+    "source_after_sha256": "93d8208cd76d9ae66a33ec2312fb0ed94c4d7bb282fabe359b67d8a75986d911",
+    "jit_module": "sparse_mla_sm120_pr5121_24804035",
+    "cuda_arch": "12.0f"
+  },
+  "historical_images": {
+    "hybrid": "sha256:bf491bc1d6e3fe600f3d173964763ee7c7bd456cdd8e9bed476c82d573e494e6",
+    "native": "sha256:def8c595031e33f7152d0320b2403998466762ee0f72691269fd4eb4c6379878"
+  }
+}

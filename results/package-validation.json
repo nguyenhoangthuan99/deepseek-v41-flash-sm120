@@ -1,0 +1,104 @@
+{
+  "date": "2026-09-17T09:39:02.869Z",
+  "builds": [
+    {
+      "tags": [
+        "deepseek-v41-flash-sm120:latest"
+      ],
+      "id": "sha256:484507675b2cccf2938c1b64943541448621b90331f05943e2bfbb7e1f31ceaa",
+      "source_revision": "da64c5cbb8cf6bfd39be19da43573fdfd484c43a",
+      "target": "runtime",
+      "status": "built_and_cpu_verified"
+    },
+    {
+      "tags": [
+        "deepseek-v41-flash-sm120:hybrid"
+      ],
+      "id": "sha256:5cbeac139d175c2eb468b7de727ac245c207a67f169773c4786ca10f5156ef39",
+      "source_revision": "da64c5cbb8cf6bfd39be19da43573fdfd484c43a",
+      "target": "hybrid",
+      "status": "built_and_cpu_verified"
+    }
+  ],
+  "cpu_checks": {
+    "network": "disabled",
+    "gpus_exposed": false,
+    "model_weights_loaded": false,
+    "source_files_checked_per_image": 4770,
+    "runtime_files_checked_per_image": 8,
+    "packages_match_version_lock": true,
+    "parsers_constructed": true,
+    "native_source_hash_and_compiled_library_verified": true,
+    "hybrid_stock_flashinfer_source_verified": true
+  },
+  "shell_checks": {
+    "syntax": "passed",
+    "init": "passed",
+    "cwd_independent_dry_run": "passed",
+    "existing_container_start": "refused without replacement",
+    "unmanaged_stop": "refused and container identity preserved",
+    "managed_stop": "accepted inspected disposable container identity",
+    "test_containers_removed": true,
+    "remote_runtime_preflight": "Refused remote start before local GPU/checkpoint checks",
+    "read_only_status": "Existing deployment healthy; no restart"
+  },
+  "api_smoke": {
+    "status": "passed",
+    "cases": [
+      {
+        "case": "plain-chat",
+        "status": "passed"
+      },
+      {
+        "case": "reasoning-high",
+        "status": "passed"
+      },
+      {
+        "case": "reasoning-stream",
+        "status": "passed"
+      },
+      {
+        "case": "reasoning-none",
+        "status": "passed"
+      },
+      {
+        "case": "tool-auto",
+        "status": "passed"
+      },
+      {
+        "case": "tool-roundtrip",
+        "status": "passed"
+      },
+      {
+        "case": "tool-stream",
+        "status": "passed"
+      },
+      {
+        "case": "reasoning-tool",
+        "status": "passed"
+      },
+      {
+        "case": "reasoning-tool-stream",
+        "status": "passed"
+      },
+      {
+        "case": "tool-required",
+        "status": "passed"
+      },
+      {
+        "case": "tool-named",
+        "status": "passed"
+      }
+    ],
+    "target": "Existing historically validated deployment, not a new full-model launch of the packaged image"
+  },
+  "privacy_scan": "No private deployment addresses, paths or credential markers found in publishable files",
+  "full_model_launched_from_packaged_image": false,
+  "full_one_million_token_request_tested": false,
+  "production_server_restarted": false,
+  "documentation": {
+    "bash_blocks": 17,
+    "json_blocks": 3,
+    "local_links": 16
+  }
+}

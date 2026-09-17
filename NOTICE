@@ -1,0 +1,24 @@
+DeepSeek-V4.1-Flash SM120 deployment kit
+Maintained by nguyenhoangthuan99.
+
+The deployment scripts and packaging are provided under the Apache License 2.0
+in LICENSE. Third-party components retain their original licenses:
+
+- SGLang: sgl-project/sglang, included through the pinned
+  nguyenhoangthuan99/sglang submodule; Apache License 2.0.
+- FlashInfer PR #5121: the modified sparse_mla_sm120_prefill.cu source is
+  Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES, BSD-3-Clause.
+  Its notice is reproduced in licenses/FlashInfer-SM120-BSD-3-Clause.txt.
+  This kit backports only the extra-cache page-size dispatch additions and
+  changes the affected JIT module name to avoid stale prebuilt artifacts.
+- The sparse-attention TileLang adapters were developed from the DeepSeek
+  reference attention implementation. Copyright (c) 2023 DeepSeek, MIT License;
+  the license is reproduced in licenses/DeepSeek-MIT.txt. Modifications include
+  SM120 tile sizing, paged FP8 cache access, two-cache merging and dispatch.
+- Runtime extension provenance, including documentation-only path changes,
+  is recorded in runtime/provenance.json.
+
+The upstream base container contains additional components under their own
+licenses. This repository does not relicense those components or redistribute
+model weights. Obtain the checkpoint from its official model repository and
+review its license separately.

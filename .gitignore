@@ -1,0 +1,48 @@
+# Explicit environment loading only; never commit credentials.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.netrc
+.ssh/
+.aws/
+.docker/
+credentials*
+secrets/
+
+# Output and local caches are not deployment inputs.
+logs/
+*.log
+.cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+*.tar
+*.tar.gz
+*.tar.zst
+
+# Weights must stay outside the repository and image.
+models/
+checkpoints/
+weights/
+*.safetensors
+*.safetensors.index.json
+*.gguf
+*.ggml
+*.pt
+*.pth
+*.bin
+
+# Nested Git metadata is never part of the kit (sglang is a real submodule).
+**/.git
+.DS_Store

@@ -1,0 +1,290 @@
+{
+  "device_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "block_scale_dtype": "float32",
+  "minimum_measured_speedup": 1.1,
+  "source": "../serve-dsv41/logs/fp8-opt-20260916-144319/fp8-sweep.jsonl",
+  "shapes": [
+    {
+      "N": 1792,
+      "K": 5120,
+      "block_size": [
+        32,
+        32
+      ],
+      "configs": {
+        "1": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 16,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "4": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 16,
+          "SWAP_AB": false,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "16": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 16,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "32": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 32,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 16,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        }
+      }
+    },
+    {
+      "N": 4096,
+      "K": 1280,
+      "block_size": [
+        32,
+        32
+      ],
+      "configs": {
+        "1": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 8,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "4": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 8,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "16": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 8,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "32": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 32,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 8,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        }
+      }
+    },
+    {
+      "N": 5120,
+      "K": 1024,
+      "block_size": [
+        32,
+        32
+      ],
+      "configs": {
+        "1": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 8,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "4": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 8,
+          "SWAP_AB": false,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "16": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 8,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "32": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 32,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 8,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        }
+      }
+    },
+    {
+      "N": 576,
+      "K": 5120,
+      "block_size": [
+        32,
+        32
+      ],
+      "configs": {
+        "1": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 16,
+          "SWAP_AB": false,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "4": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 16,
+          "SWAP_AB": false,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "16": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 16,
+          "SWAP_AB": false,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "32": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 32,
+          "BLOCK_SIZE_N": 32,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 16,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        }
+      }
+    },
+    {
+      "N": 5120,
+      "K": 288,
+      "block_size": [
+        32,
+        32
+      ],
+      "configs": {
+        "1": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 8,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "4": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 1,
+          "SWAP_AB": false,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "16": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 1,
+          "SWAP_AB": false,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "32": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 32,
+          "BLOCK_SIZE_N": 32,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 1,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        }
+      }
+    },
+    {
+      "N": 25600,
+      "K": 6144,
+      "block_size": [
+        32,
+        32
+      ],
+      "configs": {
+        "1": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 4,
+          "SWAP_AB": false,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "4": {
+          "BLOCK_SIZE_K": 32,
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "GROUP_SIZE_M": 8,
+          "SPLIT_K": 4,
+          "SWAP_AB": true,
+          "num_stages": 2,
+          "num_warps": 4
+        },
+        "16": null,
+        "32": null
+      }
+    }
+  ]
+}

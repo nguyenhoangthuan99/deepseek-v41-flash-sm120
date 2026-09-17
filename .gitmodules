@@ -1,0 +1,4 @@
+[submodule "sglang"]
+	path = sglang
+	url = https://github.com/nguyenhoangthuan99/sglang.git
+	shallow = true
