@@ -78,10 +78,49 @@ with `DSV41_SM120_MXFP8=1` (requires `DSV41_SM120_FP8_DISABLE=0`).
 Validated in-container: library builds, table parses, all six shapes reproduce
 rel-L2 1.66e-3, weight-scale expansion lossless.
 
-**Not yet measured:** end-to-end serving effect. The GEMM timings above exclude
-the per-call activation quantization (e4m3 + UE8M0 blocked scales) that
-production must fuse; and no full-model throughput comparison from these engines
-has been run.
+## End-to-end serving (aggregated TP8/EP8, VM 106, 8x RTX PRO 6000)
+
+Same image and same environment; **only** `DSV41_SM120_MXFP8` /
+`DSV41_SM120_MXFP8_MIN_M` differ. 32 requests per level, 256 output tokens,
+temperature 0, greedy.
+
+| conc | engine OFF | ON, prefill-only (`MIN_M=512`) | ON, all-M (`MIN_M=0`) |
+|---|---:|---:|---:|
+| 1 | 194.5 | **196.8** (+1.2%) | 192.9 |
+| 4 | 400.9 | 396.2 (-1.2%) | 397.0 |
+| 16 | 719.7 | 695.6 (-3.4%) | **518.9 (-28%)** |
+| 32 | 1280.8 | **1332.2 (+4.0%)** | 1332.1 |
+| prefill TTFT | 0.291 s | **0.268 s (-8%)** | **2.68 s (9x worse)** |
+
+**Verdict: `MIN_M=512` (engage MXFP8 only for prefill-scale M) is neutral to
+slightly positive; all-M regresses.** The per-call overhead of the MXFP8 path
+(fresh activation/scale allocations plus a Python dispatch, neither captured in
+the decode CUDA graph) costs more than the GEMM win at decode-scale M and while
+decoding interleaves with prefill. Greedy correctness probes (`17*23=391`,
+`144/12=12`) pass in every arm.
+
+### The bug this exposed
+
+The first A/B showed C1 collapsing 194 -> 123 tok/s with the engine on. Root
+cause was **not** MXFP8's speed: the adapter snapshotted its fallback kernel at
+install time. When MXFP8 wrapped *before* the tuned SM120 patch, that snapshot
+was the **raw Triton kernel**, so every declined call (i.e. all of decode)
+bypassed the tuned config table. Fixed by resolving the fallback at call time
+(`_fallback()` reads the current entry point and steps inward via
+`__sm120_inner__`), which makes installation order irrelevant. After the fix C1
+returned to 196.8.
+
+Lesson: when stacking kernel wrappers, never capture the inner callable at
+install time.
+
+### Not measured
+
+- No sampled/quality evaluation beyond two greedy arithmetic probes.
+- No long-run (hours) stability or memory-growth test.
+- Prefill TTFT is sensitive to prefix-cache warmth and to restart-to-restart
+  variance in speculative acceptance (0.49-0.71 observed on this model), so the
+  prefill row is indicative rather than precise. Throughput rows are stable
+  (C1 repeats within +/-0.3%).
 
 ## Reproduce
 
@@ -95,3 +134,26 @@ docker exec bench bash -lc "cd /work && \
   python3 bench_extended.py --samples 5 --iters 50 --jsonl extended.jsonl"
 python3 consolidate.py   # -> mx-engine-results.json, mxfp8_crossover.json
 ```
+## Deployment
+
+```bash
+# build the engine-enabled image (adds the PR5121 sparse-MLA backport the model needs)
+docker build --target mxfp8 -t deepseek-v41-flash-sm120:mxfp8 .
+
+# standalone test launcher (never touches the production deploy path)
+./serve-mxfp8-test.sh check
+./serve-mxfp8-test.sh start on     # MXFP8 on, MIN_M default 512
+./serve-mxfp8-test.sh start off    # same stack, engine disabled
+./serve-mxfp8-test.sh bench
+```
+
+Env knobs: `DSV41_SM120_MXFP8=1` enables the engine, `DSV41_SM120_MXFP8_MIN_M`
+sets the minimum M at which it engages (default 512 = prefill only; `0` = always,
+which measured worse), `DSV41_SM120_FP8_DISABLE` must be `0`.
+
+Note: the `Using default W8A8 Block FP8 kernel config. Performance might be
+sub-optimal!` startup line is emitted by **stock** SGLang, which ships no RTX PRO
+6000 SM120 config files (0 of them). The tuned table is supplied by this kit's
+runtime adapter, so the message appears even when tuned configs are in effect.
+Shapes absent from the table (e.g. `1536x5120`, `5120x15360`) genuinely run the
+generic kernel — a known, small gap.

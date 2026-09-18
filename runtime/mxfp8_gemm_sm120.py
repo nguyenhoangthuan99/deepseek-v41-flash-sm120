@@ -37,6 +37,11 @@ _INSTALLED = False
 _DISABLED = False
 _LIB = None
 _KG = 32
+_FUSED_QUANT = None
+# Only route calls with at least this many input rows to cuBLASLt MXFP8.
+# Prefill chunks are 1024-4096 rows; decode is ~1-128. Override with
+# DSV41_SM120_MXFP8_MIN_M (0 = always use MXFP8, the isolated-benchmark setting).
+MIN_M_MXFP8 = int(os.environ.get("DSV41_SM120_MXFP8_MIN_M", "512"))
 
 
 # --------------------------------------------------------------------------- #
@@ -112,18 +117,13 @@ def _prepare_weight(weight: torch.Tensor, weight_scale: torch.Tensor):
 # --------------------------------------------------------------------------- #
 # Activation quantization: per-32-group e4m3 + UE8M0 blocked scales
 # --------------------------------------------------------------------------- #
-def _quantize_activation(x2d: torch.Tensor):
-    """x2d (M, K) bf16/fp16 -> (e4m3 (M,K), blocked UE8M0 scales)."""
-    m, k = x2d.shape
-    groups = x2d.view(m, k // _KG, _KG)
-    amax = groups.abs().amax(dim=-1).clamp_min(1e-10)
-    # Power-of-two scale, at most 2x headroom (UINT8 exponent bias 127).
-    exponent = torch.ceil(torch.log2(amax / 448.0)).clamp(-127, 127)
-    scale = torch.pow(2.0, exponent)
-    payload = (groups / scale.unsqueeze(-1)).to(torch.float8_e4m3fn)
-    blocked = _to_blocked((exponent.to(torch.int32) + 127).clamp(0, 255)
-                          .to(torch.uint8).contiguous())
-    return payload.view(m, k), blocked
+def _load_fused_quant():
+    """Imported once: doing this per call costs a module lookup in the hot path."""
+    global _FUSED_QUANT
+    if _FUSED_QUANT is None:
+        from mxfp8_act_quant import quantize_activation_mxfp8
+        _FUSED_QUANT = quantize_activation_mxfp8
+    return _FUSED_QUANT
 
 
 # --------------------------------------------------------------------------- #
@@ -149,6 +149,14 @@ class _Thresholds:
 
 
 def _should_use(M: int, N: int, K: int, table: _Thresholds) -> bool:
+    # Phase gate: the MXFP8 path pays per-call host overhead (two fresh
+    # allocations + dispatch) that the tuned Triton kernel avoids. Isolated GEMM
+    # timings favour MXFP8 at every M, but in-serving at decode-scale M the
+    # overhead dominates: measured C1 throughput fell 196 -> 123 tok/s with the
+    # engine on, while prefill TTFT improved 2.55 -> 1.90 s. So engage only for
+    # large-M (prefill) calls and leave decode on the tuned Triton kernel.
+    if M < MIN_M_MXFP8:
+        return False
     nk = (N, K)
     if nk in table.never:
         return False
@@ -169,7 +177,8 @@ def matmul(A, B, As, Bs, block_size, output_dtype=torch.bfloat16, *, thresholds,
     n = B.shape[0]
     out = torch.empty(m, n, device=A.device, dtype=torch.bfloat16)
     payload_w, blocked_w = _prepare_weight(B, Bs)
-    payload_a, blocked_a = _quantize_activation(A.reshape(m, k))
+    payload_a, blocked_a = _load_fused_quant()(A.reshape(m, k),
+                                               out_q=None, out_s=None)
     stream = torch.cuda.current_stream().cuda_stream
     rc = lib.mxfp8_gemm(payload_a.data_ptr(), payload_w.data_ptr(),
                         blocked_a.data_ptr(), blocked_w.data_ptr(),
@@ -201,13 +210,25 @@ def install():
 
     from sglang.kernels.ops.quantization import fp8_kernel as kernels
     original = kernels.w8a8_block_fp8_matmul_triton
-    # If the tuned SM120 patch already wrapped it, wrap the tuned version.
-    inner = getattr(original, "__sm120_tuned__", original)
+
+    def _fallback(*args, **kwargs):
+        """Call the CURRENT entry point, minus ourselves.
+
+        Snapshotting the kernel at install time is wrong: whichever of
+        {tuned SM120 patch, MXFP8 engine} installs second would capture the raw
+        Triton kernel and silently bypass the other. Resolve at call time so the
+        order of installation cannot change which kernels are in play.
+        """
+        current = kernels.w8a8_block_fp8_matmul_triton
+        if getattr(current, "__sm120_mxfp8__", False):
+            # We are the outermost wrapper; step inward to the previous layer.
+            current = getattr(current, "__sm120_inner__", original)
+        return current(*args, **kwargs)
 
     def optimized(A, B, As, Bs, block_size, output_dtype=torch.bfloat16):
         global _DISABLED
         if _DISABLED:
-            return inner(A, B, As, Bs, block_size, output_dtype=output_dtype)
+            return _fallback(A, B, As, Bs, block_size, output_dtype=output_dtype)
         try:
             if (
                 A.dim() == 2
@@ -225,9 +246,10 @@ def install():
         except Exception as exc:  # noqa: BLE001
             _DISABLED = True
             _LOG.warning("MXFP8 engine disabled after failure: %s", exc)
-        return inner(A, B, As, Bs, block_size, output_dtype=output_dtype)
+        return _fallback(A, B, As, Bs, block_size, output_dtype=output_dtype)
 
     optimized.__sm120_mxfp8__ = True
+    optimized.__sm120_inner__ = original
     kernels.w8a8_block_fp8_matmul_triton = optimized
     try:
         from sglang.srt.layers.quantization import fp8_utils

@@ -49,8 +49,8 @@
   },
   {
     "file": "runtime/mxfp8_gemm_sm120.py",
-    "source_sha256": "e990b4faeefa833d06bcf9af9051c392ecc71288b300fdb00a25a02bd0fe9099",
-    "packaged_sha256": "e990b4faeefa833d06bcf9af9051c392ecc71288b300fdb00a25a02bd0fe9099",
+    "source_sha256": "30b6eab368b20386f1d0fb3fd48b7ad55a8ecc103de56a0264ab4fcd61754f21",
+    "packaged_sha256": "30b6eab368b20386f1d0fb3fd48b7ad55a8ecc103de56a0264ab4fcd61754f21",
     "change": "cuBLASLt VEC32_UE8M0 MXFP8 dense-GEMM engine: per-shape crossover dispatch table, one-time 32x32->1x32 UE8M0 weight-scale re-blocking, UE8M0 activation quant, Triton fallback. Opt-in via DSV41_SM120_MXFP8=1."
   },
   {
@@ -64,5 +64,11 @@
     "source_sha256": "762ead109d0589e27ac72284dc5bdec9dc19259234b451564fbfec57556cbc3c",
     "packaged_sha256": "762ead109d0589e27ac72284dc5bdec9dc19259234b451564fbfec57556cbc3c",
     "change": "Measured per-shape M crossover where cuBLASLt MXFP8 beats the tuned SM120 split-K Triton kernel (120 cells, 6 dense shapes x 20 M)."
+  },
+  {
+    "file": "runtime/mxfp8_act_quant.py",
+    "source_sha256": "936a6024e7d43b2bcf3ea766687561c2ac7ed716d411886e99776e11b3ca8dd6",
+    "packaged_sha256": "936a6024e7d43b2bcf3ea766687561c2ac7ed716d411886e99776e11b3ca8dd6",
+    "change": "Fused per-32-group FP8 activation quantizer emitting e4m3 payload and the cuBLASLt 128x4-tiled 32x16-swizzled UE8M0 scale layout in one pass (removes ~26us of torch launch overhead per call)."
   }
 ]
