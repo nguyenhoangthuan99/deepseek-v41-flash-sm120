@@ -1,14 +1,14 @@
 [
   {
     "file": "runtime/sitecustomize.py",
-    "source_sha256": "367a4ce43eae5a84daea606cb59ba024934046755103fb6c8de06cc9531eecef",
-    "packaged_sha256": "367a4ce43eae5a84daea606cb59ba024934046755103fb6c8de06cc9531eecef",
+    "source_sha256": "c38f27ce6c36960e918fd41c587a19b0da4a0afd1fdfbeea710cb0607a234f5d",
+    "packaged_sha256": "c38f27ce6c36960e918fd41c587a19b0da4a0afd1fdfbeea710cb0607a234f5d",
     "change": "none"
   },
   {
     "file": "runtime/sm120_fp8_patch.py",
-    "source_sha256": "6c1213f3ecbe80e60f197d4e52923a4e7f2022c1123ae9c1d66671b91549798d",
-    "packaged_sha256": "6c1213f3ecbe80e60f197d4e52923a4e7f2022c1123ae9c1d66671b91549798d",
+    "source_sha256": "871aeb2d01ca5864e6b6c8c0117f07ae53daa74b157bb7c6654fe002b0b81280",
+    "packaged_sha256": "871aeb2d01ca5864e6b6c8c0117f07ae53daa74b157bb7c6654fe002b0b81280",
     "change": "none"
   },
   {
@@ -19,7 +19,7 @@
   },
   {
     "file": "runtime/sglang_sm120_patch.py",
-    "source_sha256": "88b72d6dbc7a97c29a8941f19610b68d5faf61d4658c973f6ef90a83ba8857d9",
+    "source_sha256": "37ba288c5c62fccaaeb526066a324bfd036fd9976d911740f8de9a6d4e1ba262",
     "packaged_sha256": "37ba288c5c62fccaaeb526066a324bfd036fd9976d911740f8de9a6d4e1ba262",
     "change": "Documentation-only deployment path replacement"
   },
@@ -46,5 +46,23 @@
     "source_sha256": "5dc0273797cc7b512b6fc021a813d62d565f8fe0380068a6619277b753cacbb1",
     "packaged_sha256": "5dc0273797cc7b512b6fc021a813d62d565f8fe0380068a6619277b753cacbb1",
     "change": "none"
+  },
+  {
+    "file": "runtime/mxfp8_gemm_sm120.py",
+    "source_sha256": "e990b4faeefa833d06bcf9af9051c392ecc71288b300fdb00a25a02bd0fe9099",
+    "packaged_sha256": "e990b4faeefa833d06bcf9af9051c392ecc71288b300fdb00a25a02bd0fe9099",
+    "change": "cuBLASLt VEC32_UE8M0 MXFP8 dense-GEMM engine: per-shape crossover dispatch table, one-time 32x32->1x32 UE8M0 weight-scale re-blocking, UE8M0 activation quant, Triton fallback. Opt-in via DSV41_SM120_MXFP8=1."
+  },
+  {
+    "file": "runtime/cublaslt_mxfp8.cu",
+    "source_sha256": "17affa55eca09e53fd8bc656fc245cf00a2f60c708a20e6cc74bfc55f50ffc4a",
+    "packaged_sha256": "17affa55eca09e53fd8bc656fc245cf00a2f60c708a20e6cc74bfc55f50ffc4a",
+    "change": "cuBLASLt MXFP8 GEMM wrapper (e4m3 payload, e8m0 1x32 blocked scales, bf16 out); JIT-compiled on first use into runtime/build."
+  },
+  {
+    "file": "runtime/mxfp8_crossover.json",
+    "source_sha256": "762ead109d0589e27ac72284dc5bdec9dc19259234b451564fbfec57556cbc3c",
+    "packaged_sha256": "762ead109d0589e27ac72284dc5bdec9dc19259234b451564fbfec57556cbc3c",
+    "change": "Measured per-shape M crossover where cuBLASLt MXFP8 beats the tuned SM120 split-K Triton kernel (120 cells, 6 dense shapes x 20 M)."
   }
 ]

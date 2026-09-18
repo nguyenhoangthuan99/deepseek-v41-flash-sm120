@@ -47,3 +47,6 @@ weights/
 # Nested Git metadata is never part of the kit (sglang is a real submodule).
 **/.git
 .DS_Store
+
+# MXFP8 engine JIT build output.
+runtime/build/

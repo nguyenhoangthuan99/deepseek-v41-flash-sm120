@@ -133,6 +133,9 @@ def install():
 
     # The universal kernel entry point looks up this global at call time;
     # fp8_utils also imports it by value and may already be loaded at startup.
+    # Publish the pre-wrap kernel so the MXFP8 engine can chain tuned->MXFP8->
+    # triton without double-applying the tuned configs.
+    optimized.__sm120_tuned__ = original
     kernels.w8a8_block_fp8_matmul_triton = optimized
     from sglang.srt.layers.quantization import fp8_utils
 

@@ -36,6 +36,10 @@ NCCL_P2P_LEVEL=${NCCL_P2P_LEVEL:-PHB}
 NCCL_PROTO=${NCCL_PROTO:-}
 DSV41_SM120_DISABLE=${DSV41_SM120_DISABLE:-1}
 DSV41_SM120_FP8_DISABLE=${DSV41_SM120_FP8_DISABLE:-0}
+# cuBLASLt MXFP8 dense-GEMM engine for the block-FP8 linears (opt-in). Requires
+# DSV41_SM120_FP8_DISABLE=0. Dispatches per shape/M from the measured
+# runtime/mxfp8_crossover.json; falls back to the tuned Triton kernel elsewhere.
+DSV41_SM120_MXFP8=${DSV41_SM120_MXFP8:-0}
 STRICT=${STRICT:-1}
 DRY_RUN=${DRY_RUN:-0}
 BASE_URL=${BASE_URL:-http://127.0.0.1:${PORT}}
@@ -199,6 +203,7 @@ launch_args() {
         --env "DSV41_SM120_STRICT=$STRICT"
         --env "DSV41_SM120_DISABLE=$DSV41_SM120_DISABLE"
         --env "DSV41_SM120_FP8_DISABLE=$DSV41_SM120_FP8_DISABLE"
+        --env "DSV41_SM120_MXFP8=$DSV41_SM120_MXFP8"
         --env "NCCL_P2P_LEVEL=$NCCL_P2P_LEVEL")
     if [[ -n "$NCCL_PROTO" ]]; then RUN+=(--env "NCCL_PROTO=$NCCL_PROTO"); fi
     RUN+=(--env SGLANG_SM120_FLASHMLA_BACKEND=flashinfer
@@ -240,7 +245,7 @@ check_launch_settings() {
         [[ "${!variable}" =~ ^[1-9][0-9]*$ ]] || fail "$variable must be a positive integer."
     done
     [[ "$EP" =~ ^(0|[1-9][0-9]*)$ ]] || fail "EP must be a nonnegative integer."
-    for variable in SPEC STRICT DSV41_SM120_DISABLE DSV41_SM120_FP8_DISABLE MIXED_CHUNK; do
+    for variable in SPEC STRICT DSV41_SM120_DISABLE DSV41_SM120_FP8_DISABLE MIXED_CHUNK DSV41_SM120_MXFP8; do
         [[ "${!variable}" == 0 || "${!variable}" == 1 ]] || fail "$variable must be 0 or 1."
     done
 }
