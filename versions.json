@@ -4,6 +4,27 @@
     "commit": "da64c5cbb8cf6bfd39be19da43573fdfd484c43a",
     "version": "0.0.0.dev1+gda64c5cbb"
   },
+  "vllm": {
+    "repository": "https://github.com/nguyenhoangthuan99/vllm.git",
+    "commit": "4980e06225532feca2ebad8c834dab3f7739acb9",
+    "version": "0.28.1rc1.dev137+g5ab628dd1",
+    "base_image": "vllm-dsv4-vision@sha256:f180cdb3cebca971e00d1c29057b80462eec69c524d60f308ef23fd53f5fe031",
+    "base_image_rebuild": "docker build -f vllm/docker/Dockerfile -t vllm-dsv4-vision:sm120 vllm/",
+    "ext_image": "dsv41-vllm-ext:sm120",
+    "ext_image_note": "compiled fork extension tree; rebuild base_image_rebuild from the pinned commit and reuse it for both BASE_IMAGE and EXT_IMAGE, or package an existing fork build's dist-packages/vllm as EXT_IMAGE",
+    "flashinfer": "0.6.18",
+    "flashinfer_patches": [
+      "flashinfer-sm120-page32.patch",
+      "flashinfer-sm120-masked-logits.patch",
+      "flashinfer-sm120-masked-values.patch"
+    ],
+    "deepgemm_patch": "deepgemm-sm120-page32.patch",
+    "nvidia_cutlass_dsl": "4.6.2",
+    "kernel_config": {
+      "linear_backend": "flashinfer_b12x",
+      "deep_gemm_moe_small_m_alignment": 64
+    }
+  },
   "base_image": "lmsysorg/sglang@sha256:4a5d132a06a77c8331e15845f2e925adc788b00105097ad55409afa3f4fa4860",
   "tilelang": "0.1.14",
   "apache_tvm_ffi": "0.1.11",

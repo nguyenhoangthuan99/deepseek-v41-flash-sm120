@@ -2,3 +2,7 @@
 	path = sglang
 	url = https://github.com/nguyenhoangthuan99/sglang.git
 	shallow = true
+[submodule "vllm"]
+	path = vllm
+	url = https://github.com/nguyenhoangthuan99/vllm.git
+	shallow = true

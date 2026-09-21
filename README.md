@@ -4,6 +4,34 @@ A pinned build and deployment kit for **eight NVIDIA RTX PRO 6000 Blackwell Serv
 
 This repository packages the integration used in historical serving experiments. **It is not a claim that a newly rebuilt image has passed a fresh full-model benchmark, that a full 1,048,576-token request has been validated, or that stock SGLang main supports this complete configuration.** See [results and limitations](docs/RESULTS.md) and the [machine-readable measurements](results/measurements.json).
 
+## Engines
+
+Two serving engines are packaged, each with its own Dockerfile and launcher:
+
+| Engine | Dockerfile | Launcher | Submodule |
+| --- | --- | --- | --- |
+| SGLang (default, port 30000) | `Dockerfile.sglang` | `deploy.sh` | `sglang/` @ `da64c5cb` |
+| vLLM (port 30100) | `Dockerfile.vllm` | `serve-vllm.sh` | `vllm/` @ [`4980e062`](https://github.com/nguyenhoangthuan99/vllm/commit/4980e06225532feca2ebad8c834dab3f7739acb9) |
+
+The vLLM engine ships the best measured SM120 configuration: DSpark K3
+speculative decoding, FULL_DECODE_ONLY CUDA graphs, 1,048,576-token context,
+FlashInfer b12x/split-K MXFP8 linear kernels, and DeepGEMM MoE small-M
+alignment 64 (`--kernel-config` in `serve-vllm.sh`). Measured on the matched
+cold workload (168 requests, medians): decode 179.9 / 433.6 / 914.5 / 1226.9
+tok/s at concurrency 1/4/16/32 versus 166.9 / 386.4 / 811.3 / 1127.7 untuned.
+All changed packages are pinned in this repository: the vLLM fork source
+(submodule, including its custom C++/CUDA ops and vendored DeepGEMM) and the
+three FlashInfer SM120 patches plus the DeepGEMM page-32 patch (baked in by
+`Dockerfile.vllm` from `vllm/tools/`). See the header of `Dockerfile.vllm`
+for the two-image self-build path (`BASE_IMAGE`/`EXT_IMAGE`) and
+`versions.json` for pins.
+
+```bash
+# vLLM engine
+docker build -f Dockerfile.vllm -t dsv41-vllm:sm120 .
+MODEL_DIR=/srv/models/DeepSeek-V4.1-Flash ./serve-vllm.sh
+```
+
 ## What is pinned
 
 [versions.json](versions.json) records the source, dependency, backport, and historical image identities.

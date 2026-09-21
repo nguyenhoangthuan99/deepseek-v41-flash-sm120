@@ -1,6 +1,7 @@
 # Default deny: never send host credentials, logs, checkpoint trees, or caches.
 **
-!Dockerfile
+!Dockerfile.sglang
+!Dockerfile.vllm
 !.dockerignore
 !versions.json
 !LICENSE
@@ -18,6 +19,16 @@
 !sglang/
 !sglang/python/
 !sglang/python/**
+!vllm/
+!vllm/vllm/
+!vllm/vllm/**
+!vllm/tools/
+!vllm/tools/apply-flashinfer-sm120-page32.sh
+!vllm/tools/flashinfer-sm120-page32.patch
+!vllm/tools/flashinfer-sm120-masked-logits.patch
+!vllm/tools/flashinfer-sm120-masked-values.patch
+!vllm/tools/build-deepgemm-sm120-page32.sh
+!vllm/tools/deepgemm-sm120-page32.patch
 # Keep the complete pinned Python tree, not submodule docs/tests or VCS state.
 **/.git
 **/.git/**

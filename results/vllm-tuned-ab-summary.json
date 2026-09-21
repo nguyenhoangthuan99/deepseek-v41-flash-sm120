@@ -1,0 +1,39 @@
+{
+  "date": "2026-09-21",
+  "comparison": "tuned-1m (vllm-tune-b12x-1m) vs baseline-1m (vllm-tune-base-1m)",
+  "config_delta": {
+    "kernel_config": {
+      "linear_backend": "flashinfer_b12x",
+      "deep_gemm_moe_small_m_alignment": 64
+    },
+    "everything_else": "identical launch args (DSpark K3, FULL_DECODE_ONLY capture sizes [3,4,6,8,12,16,24,32,48,64,96,128], max_model_len 1048576, TP8, block 64, gpu_mem_util 0.85, port 30100)"
+  },
+  "kernel_selection_evidence": "server log: 'Using FlashInferB12xMxfp8LinearKernel for MXFP8 GEMM' (all 8 ranks); unsupported layer types fall back to automatic selection by design",
+  "decode_median_tok_s": {
+    "workload": "matched-cold-workload.json sha256 cadc39231f472c1221324539949cec41871e558f495bf37d0efdbaf3791e31bf, 168 requests, 3 repeats per concurrency",
+    "baseline": {"c1": 166.86, "c4": 386.36, "c16": 811.26, "c32": 1149.67},
+    "tuned":    {"c1": 179.85, "c4": 433.56, "c16": 914.47, "c32": 1226.94},
+    "gain_pct": {"c1": 7.8, "c4": 12.2, "c16": 12.7, "c32": 6.7}
+  },
+  "prefill_ttft_ms_cold_first_repeat": {
+    "note": "tuned ran default 12-size sweep; warm repeats show prefix-cache hits (~170ms) and are excluded; cold first-repeat values compared",
+    "baseline": {"1024": 175, "4096": 550, "7168": 911},
+    "tuned":    {"1024": 163, "4096": 546, "7168": 926},
+    "verdict": "neutral within noise; prefill stays on CUTLASS path by design (M>128)"
+  },
+  "correctness": "9/10 exact + 5/5 retrieval; only failure exact:reverse, identical to baseline and all prior engines incl. SGLang",
+  "smoke": "7/7 passed",
+  "long_context": {
+    "workload_sha256": "afd847d1d6468da6264b5f4889a63eaa1c7ad3727297daa9623628f08953ec12",
+    "tuned_elapsed_s": {"65536": 8.82, "262144": 38.56, "1048576": 215.21},
+    "baseline_elapsed_s": {"65536": 8.75, "262144": 38.37, "1048576": 213.61},
+    "all_retrieved": true, "finite_logprobs": true, "token_accounting_exact": true
+  },
+  "isolated_kernel_validation": {
+    "dense": "integrated-dense-validation.json: 70/70 pass vs CUTLASS, max relative_l2 7.68e-5, changed-input and zero-input graph replay pass, fake-tensor op registered",
+    "moe": "moe-config-validation.jsonl: 20/20 pass, all bitwise-identical to alignment-128 baseline, rows {4,16,64,128,129} incl. prefill boundary, configuration-controlled",
+    "regression_test": "tests/kernels/moe/test_deepgemm.py::test_fp4_experts_preserve_quant_groups_with_smaller_row_tiles passed"
+  },
+  "server_state": "vllm-tune-b12x-1m stopped intentionally after A/B (exit 0)",
+  "recommended_launch_addition": "--kernel-config '{\"linear_backend\":\"flashinfer_b12x\",\"deep_gemm_moe_small_m_alignment\":64}'"
+}

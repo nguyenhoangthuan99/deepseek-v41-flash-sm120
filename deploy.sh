@@ -109,7 +109,7 @@ build() {
     docker build --progress=plain --target "$BUILD_TARGET" \
         --build-arg "BASE_IMAGE=$(pin base_image)" \
         --build-arg "SGLANG_COMMIT=$(pin sglang.commit)" \
-        --tag "$IMAGE" --file "$ROOT/Dockerfile" "$ROOT"
+        --tag "$IMAGE" --file "$ROOT/Dockerfile.sglang" "$ROOT"
 }
 
 docker_ready() {

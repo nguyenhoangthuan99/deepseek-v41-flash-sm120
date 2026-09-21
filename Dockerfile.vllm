@@ -1,0 +1,94 @@
+# syntax=docker/dockerfile:1
+# vLLM engine image: pinned fork source overlaid on the validated SM120 base.
+#
+# Self-build path (no private registry needed) — every changed package is in
+# this repository:
+#   1. Compiled stack: the pinned `vllm/` submodule carries the complete build
+#      (fork C++/CUDA extensions incl. SM120 custom ops, Torch 2.13.0+cu130,
+#      FlashInfer 0.6.18.post1, nvidia-cutlass-dsl 4.6.2, vendored DeepGEMM):
+#        git submodule update --init --depth 1 vllm
+#        docker build -f vllm/docker/Dockerfile -t vllm-dsv4-vision:sm120 vllm/
+#      IMPORTANT: the fork adds custom C++ ops (vocab_parallel_embedding,
+#      ngram_compute_n_gram_ids, ...). EXT_IMAGE below must be an image whose
+#      vLLM was compiled from this same fork commit; a stock upstream vLLM
+#      image will fail at engine start with missing '_C' attributes.
+#   2. This file: overlays the pinned vLLM Python tree (SM120 b12x/split-K
+#      MXFP8 linear kernel, MoE small-M alignment, page-32 sparse MLA) and
+#      bakes in the three FlashInfer SM120 patches. The DeepGEMM page-32 patch
+#      and build script ship alongside for base rebuilds.
+#        docker build -f Dockerfile.vllm \
+#          --build-arg BASE_IMAGE=vllm-dsv4-vision:sm120 \
+#          --build-arg EXT_IMAGE=vllm-dsv4-vision:sm120 -t dsv41-vllm:sm120 .
+#
+# BASE_IMAGE supplies the Python/CUDA runtime; EXT_IMAGE supplies the compiled
+# vLLM package tree matching VLLM_COMMIT. They may be the same image. The local
+# validated deployment keeps the digest-pinned base and overrides EXT_IMAGE
+# with a fork-commit build (see versions.json vllm.ext_image_rebuild).
+ARG BASE_IMAGE=vllm-dsv4-vision@sha256:f180cdb3cebca971e00d1c29057b80462eec69c524d60f308ef23fd53f5fe031
+ARG EXT_IMAGE=dsv41-vllm-ext:sm120
+FROM ${EXT_IMAGE} AS ext
+FROM ${BASE_IMAGE} AS runtime
+
+ARG BASE_IMAGE
+ARG VLLM_COMMIT=4980e06225532feca2ebad8c834dab3f7739acb9
+LABEL org.opencontainers.image.title="DeepSeek-V4.1-Flash SM120 vLLM engine" \
+      org.opencontainers.image.description="Pinned vLLM fork with SM120 b12x/split-K MXFP8 linear kernel, MoE small-M alignment, and page-32 FlashInfer sparse MLA" \
+      org.opencontainers.image.source="https://github.com/nguyenhoangthuan99/deepseek-v41-flash-sm120" \
+      org.opencontainers.image.authors="nguyenhoangthuan99" \
+      org.opencontainers.image.base.name="${BASE_IMAGE}" \
+      org.deepseek-v41-flash-sm120.vllm.revision="${VLLM_COMMIT}"
+
+COPY versions.json /opt/dsv41/versions.json
+RUN python3 -c 'import json,os,flashinfer; p=json.load(open("/opt/dsv41/versions.json")); assert p["vllm"]["commit"] == os.environ["VLLM_COMMIT"], (p["vllm"]["commit"], os.environ["VLLM_COMMIT"]); assert flashinfer.__version__ == p["vllm"]["flashinfer"], flashinfer.__version__'
+
+# Pinned Python tree from the submodule, then the compiled extensions from the
+# base install. PYTHONPATH resolution below prefers this tree; the base
+# dist-packages copy remains untouched for rollback.
+COPY vllm/vllm/ /opt/dsv41/vllm-src/vllm/
+COPY vllm/tools/apply-flashinfer-sm120-page32.sh \
+     vllm/tools/flashinfer-sm120-page32.patch \
+     vllm/tools/flashinfer-sm120-masked-logits.patch \
+     vllm/tools/flashinfer-sm120-masked-values.patch \
+     vllm/tools/build-deepgemm-sm120-page32.sh \
+     vllm/tools/deepgemm-sm120-page32.patch \
+     /opt/dsv41/vllm-tools/
+COPY LICENSE NOTICE /opt/dsv41/
+COPY licenses/ /opt/dsv41/licenses/
+# Fill compiled/generated artifacts (fork extension .so trees, vllm_flash_attn,
+# _version.py) from the fork-built EXT_IMAGE without clobbering overlay sources.
+RUN --mount=from=ext,source=/usr/local/lib/python3.12/dist-packages/vllm,target=/mnt/ext-vllm \
+    cp -an /mnt/ext-vllm/. /opt/dsv41/vllm-src/vllm/
+
+# Creates /opt/sm120-venv (system-site-packages) and applies the FlashInfer
+# patches idempotently; refuses partial application on a drifted source.
+# The patched sparse module JIT-compiles on first GPU use into
+# FLASHINFER_WORKSPACE_BASE; mount a persistent cache there to avoid recompiles.
+RUN FLASHINFER_CUDA_ARCH_LIST=12.0f bash /opt/dsv41/vllm-tools/apply-flashinfer-sm120-page32.sh
+
+ENV PYTHONPATH=/opt/dsv41/vllm-src \
+    VLLM_USE_V2_MODEL_RUNNER=1 \
+    VLLM_USE_DEEP_GEMM=1 \
+    FLASHINFER_WORKSPACE_BASE=/cache/flashinfer \
+    DSV41_ENGINE=vllm
+
+# CPU-only build verification: the overlay tree must win import resolution,
+# expose the compiled extensions, and contain the tuned opt-in kernels.
+RUN /opt/sm120-venv/bin/python - <<'PY'
+import importlib.util as u
+spec = u.find_spec("vllm")
+assert spec.origin == "/opt/dsv41/vllm-src/vllm/__init__.py", spec.origin
+import pathlib
+src_dir = pathlib.Path("/opt/dsv41/vllm-src/vllm")
+for name in ("_C_stable_libtorch.abi3.so", "_moe_C_stable_libtorch.abi3.so",
+             "cumem_allocator.abi3.so", "vllm_flash_attn"):
+    assert (src_dir / name).exists(), name
+blob = (src_dir / "_C_stable_libtorch.abi3.so").read_bytes()
+assert b"vocab_parallel_embedding" in blob, (
+    "extension lacks fork custom ops; EXT_IMAGE must be built from the pinned fork commit")
+assert u.find_spec("vllm.model_executor.kernels.linear.mxfp8.flashinfer_sm120") is not None
+src = open("/opt/dsv41/vllm-src/vllm/config/kernel.py").read()
+assert "deep_gemm_moe_small_m_alignment" in src
+print("vllm overlay verified")
+PY
+
+WORKDIR /opt/dsv41
