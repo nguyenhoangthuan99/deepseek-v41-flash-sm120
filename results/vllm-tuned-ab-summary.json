@@ -15,11 +15,11 @@
     "tuned":    {"c1": 179.85, "c4": 433.56, "c16": 914.47, "c32": 1226.94},
     "gain_pct": {"c1": 7.8, "c4": 12.2, "c16": 12.7, "c32": 6.7}
   },
-  "prefill_ttft_ms_cold_first_repeat": {
-    "note": "tuned ran default 12-size sweep; warm repeats show prefix-cache hits (~170ms) and are excluded; cold first-repeat values compared",
-    "baseline": {"1024": 175, "4096": 550, "7168": 911},
-    "tuned":    {"1024": 163, "4096": 546, "7168": 926},
-    "verdict": "neutral within noise; prefill stays on CUTLASS path by design (M>128)"
+  "prefill_ttft_ms_cold_median": {
+    "note": "Tuned collection used four invocations, each repeating the same three prefill sizes. Only the first invocation is included: median over its three unique-prefix repeats per size. Later invocations reused measured prefixes and are excluded as warm-cache data. This corrects the earlier mistaken 12-size-sweep/minimum interpretation.",
+    "baseline": {"1024": 178.02886699791998, "4096": 557.78694502078, "7168": 911.857707076706},
+    "tuned": {"1024": 175.89135107118636, "4096": 547.0582989510149, "7168": 928.0816350365058},
+    "verdict": "Within about 2%; no material prefill improvement established. Prefill stays on CUTLASS by design (M>128)."
   },
   "correctness": "9/10 exact + 5/5 retrieval; only failure exact:reverse, identical to baseline and all prior engines incl. SGLang",
   "smoke": "7/7 passed",

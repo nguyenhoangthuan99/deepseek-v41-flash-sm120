@@ -1,20 +1,182 @@
-# Historical results and validation boundaries
+# Results and validation boundaries
 
-The structured record is [results/measurements.json](../results/measurements.json). These are **historical measurements of the pinned serving integration**, not a new benchmark of an image rebuilt from this repository. The runtime configuration is described in [DEPLOYMENT.md](DEPLOYMENT.md).
+Current vLLM deployment evidence is recorded in the sanitized
+[deployment/debug summary](../results/vllm-vm100-deployment.json),
+[API validation](../results/vllm-vm100-api-validation.json), and
+[benchmark metrics](../results/vllm-vm100-benchmark.json). Historical SGLang
+measurements remain in [measurements.json](../results/measurements.json).
+Operational commands and build prerequisites are in
+[DEPLOYMENT.md](DEPLOYMENT.md).
 
-Three kinds of evidence must remain distinct:
+Keep four kinds of evidence distinct:
 
-1. **Historical full-model serving:** performance, retrieval, question-suite, and parser observations from the preview integration.
-2. **Isolated kernel validation:** direct numerical and CUDA-graph tests, sometimes against a newer contribution tree, without loading the full model.
-3. **Packaged-image verification:** local image construction and CPU package/source/parser/manifest checks. Running `deploy.sh check-image` does not run GPU kernels, serve weights, or reproduce either of the other categories. A reader's `deploy.sh smoke` is a fresh API check, not a replacement for the historical benchmark protocol.
+1. **Current VM100 full-model vLLM deployment:** successful normal starts,
+   live API checks, and a matched raw-completions benchmark on the final
+   parser configuration. This used retained fork-built extension artifacts,
+   not a verified clean rebuild from publicly pullable image dependencies.
+2. **Historical full-model serving:** earlier SGLang performance/quality
+   observations and the vLLM tuning/long-context exercise on VM106. Neither
+   is a fresh alternating A/B against the current VM100 deployment.
+3. **Isolated kernel validation:** direct numerical and CUDA-graph tests,
+   sometimes against newer contribution trees, without loading the model.
+4. **Packaged-image verification:** image construction and CPU
+   package/source/parser/manifest checks. `deploy.sh check-image` is
+   SGLang-specific and does not serve weights or execute GPU kernels.
 
-Nothing here claims a fresh rebuilt-image throughput/quality matrix, a validated full 1M-token request, complete stock-main support, or full upstream CI success for the contribution PR.
+No complete stock-main support or full upstream CI success is claimed.
+Earlier vLLM 1M-context exercise on VM106 is real but separate: **VM100's
+1,048,576-token configuration was verified; no request at 1M was made in
+this deployment check.** Historical SGLang validation reached 117,286 tokens.
 
-The [source-parity record](../results/source-parity.json) separately confirms that **4,770 tracked files in SGLang's `python/` tree** from the pinned preview commit matched the original deployed native image: zero missing files and zero SHA-256 mismatches. It verifies source identity, not the behavior or image digest of a subsequent rebuild.
+## Current vLLM deployment on VM100
 
-The [package-validation record](../results/package-validation.json) records successful builds of both `runtime` and `hybrid`, CPU-only checks of all 4,770 source files and eight runtime extensions in each image, package/parser/backport integrity, and exercised Bash safety controls. The new API smoke client passed eleven cases against the existing validated server, not a newly launched packaged image. No production restart or new full-model throughput claim was made during packaging.
+The live endpoint serves **`deepseek-v41-flash` on port 30000** with TP8,
+DSpark K3, FULL_DECODE_ONLY CUDA graphs, configured context 1,048,576,
+FlashInfer b12x/split-K MXFP8 linear kernels, and DeepGEMM MoE small-M
+alignment 64. Auto tool choice is enabled and both parsers are
+`deepseek_v41`. The launcher still defaults to port 30100; port 30000 is
+an explicit deployment override.
 
-## Hardware and historical settings
+### Matched raw-completions benchmark
+
+**168/168 requests and 21/21 scenarios passed**, with **three repeats**.
+The shared synthetic token-ID workload SHA-256 is
+`cadc39231f472c1221324539949cec41871e558f495bf37d0efdbaf3791e31bf`;
+the workload is preserved as
+[matched-cold-workload.json](../results/matched-cold-workload.json).
+The client used raw **`/v1/completions`**, not chat/tool/reasoning requests.
+Decode requests used **128 input / 256 output tokens**. Rates below are
+median **end-to-end aggregate output tokens / wall seconds**, measured by a
+localhost client inside the serving container, not per-request decode rates.
+
+| Concurrency | Current vLLM tok/s | Historical SGLang tok/s | Difference |
+| ---: | ---: | ---: | ---: |
+| 1 | 201.4606 | 177.0261 | +13.80% |
+| 4 | 480.4955 | 433.3856 | +10.87% |
+| 16 | 929.0074 | 900.7754 | +3.13% |
+| 32 | 1259.3453 | 1179.9050 | +6.73% |
+
+| Prefill input tokens | Current vLLM median TTFT |
+| ---: | ---: |
+| 1024 | 162.56 ms |
+| 4096 | 517.88 ms |
+| 7168 | 869.81 ms |
+
+This benchmark ran on the **final parser-enabled configuration**, but it
+does **not measure tool or reasoning performance**. The SGLang comparison
+is historical, not a freshly rerun alternating A/B, and the deployed engine
+configurations differ. It does not isolate a causal engine/kernel speedup.
+Other historical tables below use different protocols; do not mix them into
+this comparison. Repeating the same workload invocation warms measured
+prefixes and is not automatically another cold-cache measurement.
+
+### Live API validation and deployment timeline
+
+- Before the parser restart: **7/7 smoke** and **32/32 concurrent retrieval**
+  passed. These checks are not relabeled as final-parser validation.
+- After enabling the explicit parsers: a **nine-case probe** recorded eight
+  strict passes (auto, auto-stream, reasoning-tool, reasoning-tool-stream,
+  required, reasoning, reasoning-stream, tool-roundtrip). The ninth, forced
+  named-tool choice, returned valid structured `tool_calls` with
+  `finish_reason="stop"`, not the strict `"tool_calls"` finish reason.
+- vLLM uses **`message.reasoning` / `delta.reasoning`**; SGLang uses
+  **`reasoning_content`**. Auto/required calls used
+  `finish_reason="tool_calls"`. A named call must not be discarded solely
+  because its finish reason is `stop`.
+- A separate, later run of the packaged
+  **`scripts/smoke_api.py --engine vllm` passed 11/11 scenarios** against the
+  live deployment. This is distinct from the earlier nine-case probe and
+  does not erase its named-call caveat.
+- The final-parser benchmark passed **168/168**; `/health` returned **200**.
+  No 1M-token request was part of this VM100 check.
+
+Startup debugging first encountered a cache permission failure, then a
+later **CUDA illegal access during graph warmup** followed by a **secondary
+NCCL error**. Fresh NAS caches under `/mnt/nas/.cache/dsv41-sm120` were
+populated during a diagnostic `CUDA_LAUNCH_BLOCKING` run; **two normal-mode
+starts** then succeeded with the same cache and API checks. Normal serving
+has blocking disabled; Docker `--init` provides child-process reaping.
+**The root cause was not isolated.** Recovery does not prove cache
+incompatibility was the cause of the illegal access.
+
+The original SGLang container used `--rm` and was auto-removed. Its exact
+image/arguments/environment/GPU requests/mounts/IPC/limits/ports were
+recreated from saved inspection data into a **stopped rollback container
+with `AutoRemove=false`**. This is not a fresh validation of rollback
+serving. Save inspection data privately **before** stopping an auto-remove
+container; see the generic rollback procedure in the deployment guide.
+
+### Build provenance is not clean-build proof
+
+The validated vLLM image used retained extensions compiled from the pinned
+fork. The current local `BASE_IMAGE` / `EXT_IMAGE` defaults are not publicly
+pullable. The fork Dockerfile pins FlashInfer **0.6.18.post1**, whereas the
+overlay asserts **0.6.18**. A clean self-build remains **unverified** and
+requires matching dependency/patch pins, compatible runtime and fork-built
+extensions, and the required DeepGEMM base build. The overlay applies three
+FlashInfer patches but only **copies** the DeepGEMM page-32 patch/build
+script; it does not apply/build that patch.
+
+## Historical vLLM tuning and long context on VM106
+
+The earlier [vLLM tuning A/B](../results/vllm-tuned-ab-summary.json) compared
+the kernel overrides against default kernel selection with other launch
+arguments unchanged: DSpark K3, FULL_DECODE_ONLY, TP8, block size 64,
+GPU-memory utilization 0.85, configured context 1,048,576, and port 30100.
+Its matched workload used 168 requests and three repeats per concurrency.
+
+| Concurrency | Historical baseline tok/s | Historical tuned tok/s |
+| ---: | ---: | ---: |
+| 1 | 166.86 | 179.85 |
+| 4 | 386.36 | 433.56 |
+| 16 | 811.26 | 914.47 |
+| 32 | 1149.67 | 1226.94 |
+
+The baseline C32 **median is 1149.67**, not the previously quoted 1127.7.
+These values are historical tuning results, not the current VM100 benchmark.
+
+Historical prefill comparisons use the **first invocation only**, taking
+the median of its three unique-prefix repeats per input size. The tuned
+collection had **four invocations of the same three prefill sizes**, not a
+12-size sweep; later invocations reused prefixes and are warm-cache data.
+
+| Input tokens | Historical baseline median TTFT (ms) | Historical tuned median TTFT (ms) |
+| ---: | ---: | ---: |
+| 1024 | 178.028867 | 175.891351 |
+| 4096 | 557.786945 | 547.058299 |
+| 7168 | 911.857707 | 928.081635 |
+
+The differences are within about 2%; no material prefill improvement was
+established. Historical correctness was **9/10 exact and 5/5 retrieval**,
+with the same `exact:reverse` failure as the baseline; smoke passed **7/7**.
+
+Earlier VM106 long-context requests exercised **65,536, 262,144, and
+1,048,576 tokens**, with all retrieval checks passing, finite logprobs,
+and exact token accounting. Tuned elapsed times were **8.82 / 38.56 /
+215.21 seconds**, versus baseline **8.75 / 38.37 / 213.61 seconds**. This
+does not validate arbitrary 1M workloads, 32 simultaneous full windows,
+or a 1M request on VM100. The earlier tuning server was intentionally
+stopped after that A/B.
+
+## Historical SGLang packaging evidence
+
+The [source-parity record](../results/source-parity.json) confirms that
+**4,770 tracked files in SGLang's `python/` tree** from the pinned preview
+commit matched the original deployed native image: zero missing files and
+zero SHA-256 mismatches. It verifies source identity, not the behavior or
+image digest of a subsequent rebuild.
+
+The [package-validation record](../results/package-validation.json) covers
+the **initial SGLang packaging exercise**: successful `runtime` and `hybrid`
+builds, CPU checks of all 4,770 source files and eight runtime extensions in
+each image, package/parser/backport integrity, and Bash safety controls.
+Its eleven API cases ran against the existing server without a production
+restart, not a newly launched packaged SGLang image. Later packaged-image
+SGLang serving experiments below and the current vLLM deployment above are
+separate evidence; the initial packaging limitation is not a blanket claim
+that no full-model serving has since occurred.
+
+## SGLang hardware and historical settings
 
 The measured host used eight NVIDIA RTX PRO 6000 Blackwell Server Edition GPUs (SM120, 188 SMs/GPU, approximately 96 GiB/GPU). The pinned SGLang preview source was `da64c5cbb8cf6bfd39be19da43573fdfd484c43a`; the historical software included PyTorch `2.13.0+cu130`, Triton `3.7.1`, FlashInfer `0.6.18`, and TileLang `0.1.14`. Source/package/backport identities and historical image digests are in [versions.json](../versions.json).
 
@@ -22,7 +184,7 @@ The final native-serving matrix used TP8/EP8, FlashInfer MXFP4 experts, native s
 
 **The throughput matrix predates both the configured context increase from 393,216 to 1,048,576 and the explicit tool/reasoning parser flags.** Parser checks were a separate later API exercise. Do not relabel this matrix as a benchmark of the exact current launch arguments.
 
-## Warm no-speculation versus DSpark3
+## Historical SGLang warm no-speculation versus DSpark3
 
 Three-round warm aggregate output throughput, in tokens/second:
 
@@ -99,13 +261,13 @@ Structured record: [results/cuda-w8a8-engine-comparison.json](../results/cuda-w8
 
 
 
-## Context and capacity
+## Historical SGLang context and capacity
 
 | Observation | Interpretation |
 | --- | --- |
-| Current configured context limit: **1,048,576 tokens** | An admission/configuration limit; a full-window request was not tested. |
-| Earlier matrix context limit: **393,216 tokens** | The throughput matrix was collected before the limit was raised. |
-| Longest verified request: **117,286 tokens** | This is the observed validation extent, not a claim about every length below it. |
+| SGLang configured context limit: **1,048,576 tokens** | An admission/configuration limit; a full-window SGLang request was not tested in this record. |
+| Earlier SGLang matrix context limit: **393,216 tokens** | The throughput matrix was collected before the limit was raised. |
+| Longest verified SGLang request in this record: **117,286 tokens** | This is the observed validation extent, not a claim about every length below it. |
 | Logical KV capacity: **6,871,808 tokens** | A logged pool-capacity observation, not maximum proven prompt length or a concurrency guarantee. |
 | SWA capacity: **82,432 tokens** | A separate sliding-window pool observation; not additive full-context capacity. |
 | Default static memory fraction: **0.80** | Leaves memory outside the static allocation; it does not guarantee arbitrary batch/graph/prefill shapes fit. |
@@ -115,12 +277,12 @@ The logical and SWA pool figures cannot be multiplied, divided, or added into a 
 
 Target and draft graphs are enabled by default. **Full-model prefill CUDA graphs remain disabled by model policy.** A successful direct attention-kernel graph capture is not evidence that whole-model prefill graph capture is supported.
 
-## Quality and parser observations
+## Historical SGLang quality and parser observations
 
 - The small greedy question suite scored **24/25**, with the **same sisters-answer error** in the compared variants. This is a narrow consistency observation, not a general accuracy score or proof of bitwise equivalence.
-- Long retrieval checks passed **14/14**. The longest verified request was **117,286 tokens**; a full 1M-token request remains untested.
+- Long retrieval checks passed **14/14**. The longest verified SGLang request in this record was **117,286 tokens**; a full 1M-token SGLang request was not tested. This does not negate the separate earlier vLLM VM106 exercise.
 - The earlier dense-FP8 serving A/B passed **110/110 synthetic retrieval requests in each variant**, plus **46 intermediate-concurrency checks** on the tuned variant. These belong to that earlier A/B, not a new validation run of this packaged image.
-- **Eleven parser API scenarios passed** in the historical parser exercise. The current recipe explicitly sets tool parser `deepseekv41` and reasoning parser `deepseek-v41`. Those checks were separate from the older throughput matrix.
+- **Eleven parser API scenarios passed** in the historical SGLang parser exercise. The SGLang recipe explicitly sets tool parser `deepseekv41` and reasoning parser `deepseek-v41`. Those checks were separate from the older throughput matrix; vLLM's distinct parser checks are documented above.
 - Reasoning is not forced globally. Requests opt in with `reasoning_effort: "high"`; tool schemas are supplied by the client, and clients remain responsible for authorizing/executing tool calls.
 
 These checks do not establish broad model quality, security of arbitrary tool execution, long-context accuracy at untested lengths, or exact equivalence between Marlin and FlashInfer experts.
@@ -162,7 +324,7 @@ The default EP8 FlashInfer backend reflects the measured serving trade-off, not 
 
 ## What a local deployment still needs to establish
 
-Use only the shared command entry point for operational checks:
+For SGLang, use the shared command entry point:
 
 ```bash
 ./deploy.sh check-image
@@ -170,4 +332,4 @@ Use only the shared command entry point for operational checks:
 ./deploy.sh smoke
 ```
 
-The first command is CPU-only image validation. The latter two require a separately started instance; `smoke` makes real model requests. None is a fresh full matrix, broad quality evaluation, full-window test, or a guarantee of acceptable performance on a different GPU topology. Preserve your own local acceptance results without committing private logs, prompts, host identities, or checkpoint paths.
+The first command is CPU-only SGLang image validation. The latter two require a separately started SGLang instance; `smoke` makes real model requests. For vLLM, use the explicit `scripts/smoke_api.py --engine vllm` command in [DEPLOYMENT.md](DEPLOYMENT.md), after establishing its image prerequisites and starting it separately. None of these checks is a fresh full matrix, broad quality evaluation, full-window test, or a guarantee of performance on another GPU topology. Preserve local acceptance results without committing private logs, prompts, host identities, or checkpoint paths.

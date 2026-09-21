@@ -138,7 +138,7 @@ python3 consolidate.py   # -> mx-engine-results.json, mxfp8_crossover.json
 
 ```bash
 # build the engine-enabled image (adds the PR5121 sparse-MLA backport the model needs)
-docker build --target mxfp8 -t deepseek-v41-flash-sm120:mxfp8 .
+docker build -f Dockerfile.sglang --target mxfp8 -t deepseek-v41-flash-sm120:mxfp8 .
 
 # standalone test launcher (never touches the production deploy path)
 ./serve-mxfp8-test.sh check

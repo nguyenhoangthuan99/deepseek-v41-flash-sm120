@@ -3,7 +3,7 @@
 #
 # Validated A/B (matched cold workload, 168 requests, medians, 1M context):
 #   decode tok/s  C1 179.9, C4 433.6, C16 914.5, C32 1226.9
-#   (untuned kernels: 166.9 / 386.4 / 811.3 / 1127.7)
+#   (untuned kernels: 166.9 / 386.4 / 811.3 / 1149.7)
 # Tuning = DSpark K3 speculative decoding, FULL_DECODE_ONLY CUDA graphs,
 # FlashInfer b12x/split-K MXFP8 linear kernel, DeepGEMM MoE small-M
 # alignment 64 (bit-identical outputs), NCCL PHB.
@@ -24,11 +24,11 @@ BLOCK_SIZE=${BLOCK_SIZE:-64}
 SPEC=${SPEC:-1}
 DSPARK_TOKENS=${DSPARK_TOKENS:-3}
 # Measured-win kernel overrides; KERNEL_CONFIG= (empty) reverts to defaults.
-KERNEL_CONFIG=${KERNEL_CONFIG:-'{"linear_backend":"flashinfer_b12x","deep_gemm_moe_small_m_alignment":64}'}
+KERNEL_CONFIG=${KERNEL_CONFIG-'{"linear_backend":"flashinfer_b12x","deep_gemm_moe_small_m_alignment":64}'}
 CUDAGRAPH_CONFIG=${CUDAGRAPH_CONFIG:-'{"cudagraph_mode":"FULL_DECODE_ONLY","cudagraph_capture_sizes":[3,4,6,8,12,16,24,32,48,64,96,128]}'}
 NCCL_P2P_LEVEL=${NCCL_P2P_LEVEL:-PHB}
 GPU_DEVICES=${GPU_DEVICES:-all}
-CACHE_DIR=${CACHE_DIR:-/var/cache/dsv41-sm120}
+CACHE_DIR=${CACHE_DIR:-/mnt/nas/.cache/dsv41-sm120}
 LOGDIR=${LOGDIR:-$ROOT/logs}
 EXTRA_ARGS=${EXTRA_ARGS:-}
 
@@ -39,12 +39,18 @@ command -v docker >/dev/null || fail "docker not found"
 docker image inspect "$IMAGE" >/dev/null 2>&1 || fail "image $IMAGE missing; build with: docker build -f Dockerfile.vllm -t $IMAGE ."
 ! docker container inspect "$NAME" >/dev/null 2>&1 || fail "container $NAME already exists; stop/remove it first"
 
-mkdir -p "$LOGDIR" "$CACHE_DIR/flashinfer" "$CACHE_DIR/home"
+mkdir -p "$LOGDIR" "$CACHE_DIR/flashinfer" "$CACHE_DIR/home" ||
+  fail "Cannot create log/cache directories; pre-create writable directories or set LOGDIR and CACHE_DIR"
 RUN_LOG="$LOGDIR/vllm-$(date -u +%Y%m%dT%H%M%SZ).log"
 
-args=(--model /model --served-model-name dsv41 --tensor-parallel-size "$TP"
+# Space-separated aliases all served from the same endpoint.
+SERVED_NAMES=${SERVED_NAMES:-deepseek-v41-flash}
+read -r -a served <<<"$SERVED_NAMES"
+args=(--model /model --served-model-name "${served[@]}" --tensor-parallel-size "$TP"
   --max-model-len "$CONTEXT_LEN" --block-size "$BLOCK_SIZE"
   --gpu-memory-utilization "$GPU_MEM_UTIL" --trust-remote-code
+  --enable-auto-tool-choice --tool-call-parser deepseek_v41
+  --reasoning-parser deepseek_v41
   --host 0.0.0.0 --port "$PORT"
   --max-num-seqs "$MAX_RUNNING" --max-num-batched-tokens "$MAX_BATCHED_TOKENS"
   --compilation-config "$CUDAGRAPH_CONFIG")
@@ -53,7 +59,7 @@ args=(--model /model --served-model-name dsv41 --tensor-parallel-size "$TP"
   "{\"method\":\"dspark\",\"num_speculative_tokens\":$DSPARK_TOKENS,\"draft_sample_method\":\"probabilistic\",\"rejection_sample_method\":\"standard\"}")
 [[ -z "$EXTRA_ARGS" ]] || { read -r -a extra <<<"$EXTRA_ARGS"; args+=("${extra[@]}"); }
 
-docker run --rm --name "$NAME" --gpus "$GPU_DEVICES" --ipc=host --shm-size=64g \
+docker run --init --rm --name "$NAME" --gpus "$GPU_DEVICES" --ipc=host --shm-size=64g \
   -p "$BIND_HOST:$PORT:$PORT" \
   -v "$MODEL_DIR:/model:ro" \
   -v "$CACHE_DIR/flashinfer:/cache/flashinfer" \

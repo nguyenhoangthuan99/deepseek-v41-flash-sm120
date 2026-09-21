@@ -1,0 +1,133 @@
+{
+  "date": "2026-09-21",
+  "deployment_label": "VM100",
+  "engine": "vllm",
+  "image_id_on_vm100": "sha256:84e4a4bdfefc1c7e789cc3b058b05ad4cb17bb45ab38fdd61f1e0134032983a3",
+  "vllm_commit": "4980e06225532feca2ebad8c834dab3f7739acb9",
+  "sglang_commit": "da64c5cbb8cf6bfd39be19da43573fdfd484c43a",
+  "served_model": "deepseek-v41-flash",
+  "port": 30000,
+  "hardware": {
+    "gpu": "RTX PRO 6000 Blackwell Server Edition",
+    "gpu_count": 8,
+    "compute_capability": "12.0",
+    "driver": "580.178.04"
+  },
+  "runtime": {
+    "tensor_parallel_size": 8,
+    "max_model_len": 1048576,
+    "max_num_seqs": 32,
+    "max_num_batched_tokens": 8192,
+    "block_size": 64,
+    "gpu_memory_utilization": 0.85,
+    "speculative_method": "dspark",
+    "num_speculative_tokens": 3,
+    "cudagraph_mode": "FULL_DECODE_ONLY",
+    "cudagraph_capture_sizes": [
+      3,
+      4,
+      6,
+      8,
+      12,
+      16,
+      24,
+      32,
+      48,
+      64,
+      96,
+      128
+    ],
+    "kernel_config": {
+      "linear_backend": "flashinfer_b12x",
+      "deep_gemm_moe_small_m_alignment": 64
+    },
+    "NCCL_P2P_LEVEL": "PHB",
+    "CUDA_LAUNCH_BLOCKING": false,
+    "docker_init": true
+  },
+  "api": {
+    "tool_call_parser": "deepseek_v41",
+    "reasoning_parser": "deepseek_v41",
+    "auto_tool_choice": true,
+    "api_caveats": [
+      "vLLM emits reasoning, not SGLang reasoning_content",
+      "Forced named tool choice returns structured tool_calls with finish_reason=stop; auto/required use tool_calls"
+    ]
+  },
+  "cache": {
+    "root": "/mnt/nas/.cache/dsv41-sm120",
+    "mounts": {
+      "flashinfer": "/cache/flashinfer",
+      "home": "/root/.cache"
+    },
+    "preparation": "Host launcher user needs writable parent directories. Only the new dedicated cache directories had ownership adjusted; parent shared-cache permissions were not changed."
+  },
+  "debug_findings": [
+    {
+      "failure": "Image overlay omitted generated vllm_flash_attn CUDA extensions",
+      "correction": "Include the generated subpackage from the compiled fork extension tree, not only top-level .so files."
+    },
+    {
+      "failure": "Stock base extension lacked _C.vocab_parallel_embedding",
+      "correction": "Use retained compiled extensions from the pinned fork, not the older base installation."
+    },
+    {
+      "failure": "Extension export image omitted vllm/*.so",
+      "cause": "Inherited vLLM .dockerignore excluded top-level extension files.",
+      "correction": "The local extension-image packaging used a Dockerfile-specific ignore file to include .so artifacts. Clean-clone rebuild remains unverified."
+    },
+    {
+      "failure": "Launcher could not create system cache directory as unprivileged user",
+      "correction": "Pre-create writable dedicated NAS cache directories and mount them explicitly."
+    },
+    {
+      "failure": "CUDA illegal memory access during later graph-capture warmup; other ranks subsequently reported NCCL errors",
+      "evidence": {
+        "initial_failure": "Illegal CUDA memory access during graph-capture warmup; subsequent NCCL error",
+        "actions": [
+          "Fresh shared NAS cache, first populated with synchronous CUDA diagnostic run",
+          "Two normal-mode starts and API verification succeeded with same NAS cache",
+          "Docker --init added for child-process reaping"
+        ],
+        "root_cause": "Not isolated: successful recovery does not establish cache incompatibility as the cause"
+      },
+      "scope": "A timing change and new caches were introduced together. No proof that cache incompatibility caused the fault."
+    },
+    {
+      "failure": "Docker stop briefly reported a zombie container PID",
+      "correction": "Launch with Docker --init for child-process reaping. No broad daemon restart or GPU reset was used."
+    },
+    {
+      "failure": "Original SGLang rollback container disappeared after stop",
+      "cause": "Original HostConfig.AutoRemove was true.",
+      "correction": "Recreated a stopped container from saved inspect: same image, argv, env, GPU requests, mounts, IPC, shared memory, ulimits, capabilities and ports; AutoRemove intentionally disabled."
+    }
+  ],
+  "validation": {
+    "smoke_before_parser_restart": "7/7 plus 32/32 concurrent retrieval",
+    "parser_cases": {
+      "auto": "pass",
+      "auto-stream": "pass",
+      "reasoning-tool": "pass",
+      "reasoning-tool-stream": "pass",
+      "required": "pass",
+      "named": "structured-call-returned",
+      "reasoning": "pass",
+      "reasoning-stream": "pass",
+      "tool-roundtrip": "pass"
+    },
+    "post_parser_benchmark": "168/168 requests and 21/21 scenarios passed",
+    "health": 200,
+    "packaged_client": "scripts/smoke_api.py --engine vllm",
+    "packaged_client_cases": 11,
+    "packaged_client_status": "passed",
+    "scope": "Configured 1M context verified here; a full 1M request was exercised earlier on VM106, not repeated in this VM100 deployment check."
+  },
+  "artifacts": {
+    "benchmark": "vllm-vm100-benchmark.json",
+    "api_validation": "vllm-vm100-api-validation.json",
+    "workload": "matched-cold-workload.json"
+  },
+  "image_build_caveat": "Validated with retained local base and fork-extension images. Clean-clone build and FlashInfer 0.6.18 versus fork requirement 0.6.18.post1 are not validated. DeepGEMM patch is shipped, not applied by the overlay.",
+  "rollback": "Stop the vLLM container before starting preserved SGLang; both require the same GPUs and port. Raw inspect and machine-specific restore scripts remain private on the serving host."
+}

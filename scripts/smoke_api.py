@@ -33,12 +33,16 @@ def events(response):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:30000")
+    parser.add_argument("--engine", choices=("sglang", "vllm"), default="sglang")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     base = args.base_url.rstrip("/")
+    reasoning_field = "reasoning" if args.engine == "vllm" else "reasoning_content"
     report = {
         "started_unix": time.time(),
         "base_url": base,
+        "engine": args.engine,
+        "reasoning_field": reasoning_field,
         "checks": [],
         "status": "running",
     }
@@ -79,6 +83,8 @@ def main():
             "temperature": 0,
             "max_tokens": 1024,
             "stream": stream,
+            # vLLM defaults to thinking; explicitly request chat for no-reasoning cases.
+            **({"reasoning_effort": "none"} if args.engine == "vllm" else {}),
             **fields,
         }
         if stream:
@@ -113,7 +119,7 @@ def main():
                 for choice in event.get("choices") or []:
                     delta = choice.get("delta") or {}
                     text.append(delta.get("content") or "")
-                    reasoning.append(delta.get("reasoning_content") or "")
+                    reasoning.append(delta.get(reasoning_field) or "")
                     for part in delta.get("tool_calls") or []:
                         call = calls.setdefault(
                             part["index"],
@@ -134,7 +140,7 @@ def main():
                 "message": {
                     "role": "assistant",
                     "content": "".join(text),
-                    "reasoning_content": "".join(reasoning),
+                    reasoning_field: "".join(reasoning),
                     "tool_calls": [calls[index] for index in sorted(calls)],
                 },
             }
@@ -152,7 +158,7 @@ def main():
             "391" in (message.get("content") or ""), "Expected arithmetic answer 391"
         )
         require(
-            bool(message.get("reasoning_content")) == thinking,
+            bool(message.get(reasoning_field)) == thinking,
             "Unexpected reasoning field",
         )
         require(
@@ -161,10 +167,10 @@ def main():
             "Raw thinking tags leaked into answer",
         )
 
-    def check_tool(choice, thinking=False):
+    def check_tool(choice, thinking=False, expected_finish="tool_calls"):
         message = choice["message"]
         require(
-            choice["finish_reason"] == "tool_calls",
+            choice["finish_reason"] == expected_finish,
             "Expected structured tool-call finish",
         )
         calls = message.get("tool_calls") or []
@@ -187,7 +193,7 @@ def main():
             "Raw tool tags leaked into content",
         )
         require(
-            bool(message.get("reasoning_content")) == thinking,
+            bool(message.get(reasoning_field)) == thinking,
             "Unexpected tool reasoning field",
         )
         return call, values
@@ -199,27 +205,35 @@ def main():
     try:
         status, _ = get("/health")
         require(status == 200, "Server is not healthy")
-        _, payload = get("/get_server_info")
-        info = json.loads(payload)
-        report["server"] = {
-            key: info.get(key)
-            for key in (
-                "served_model_name",
-                "context_length",
-                "tp_size",
-                "ep_size",
-                "moe_runner_backend",
-                "speculative_algorithm",
-                "speculative_dspark_block_size",
-                "tool_call_parser",
-                "reasoning_parser",
+        if args.engine == "sglang":
+            _, payload = get("/get_server_info")
+            info = json.loads(payload)
+            report["server"] = {
+                key: info.get(key)
+                for key in (
+                    "served_model_name",
+                    "context_length",
+                    "tp_size",
+                    "ep_size",
+                    "moe_runner_backend",
+                    "speculative_algorithm",
+                    "speculative_dspark_block_size",
+                    "tool_call_parser",
+                    "reasoning_parser",
+                )
+            }
+            require(
+                info.get("tool_call_parser") == "deepseekv41"
+                and info.get("reasoning_parser") == "deepseek-v41",
+                "V4.1 parser defaults are not enabled",
             )
-        }
-        require(
-            info.get("tool_call_parser") == "deepseekv41"
-            and info.get("reasoning_parser") == "deepseek-v41",
-            "V4.1 parser defaults are not enabled",
-        )
+        else:
+            _, payload = get("/v1/models")
+            models = [model["id"] for model in json.loads(payload)["data"]]
+            require("deepseek-v41-flash" in models, "Expected served model missing")
+            # vLLM has no SGLang /get_server_info endpoint. Subsequent requests
+            # verify behavior; this model list does not certify launch flags.
+            report["server"] = {"models": models}
         messages = [
             {
                 "role": "user",
@@ -258,7 +272,14 @@ def main():
                 tool_choice=choice,
                 **extra,
             )
-            call, values = check_tool(answer, thinking)
+            expected_finish = "tool_calls"
+            if args.engine == "vllm" and isinstance(choice, dict):
+                expected_finish = "stop"
+                report["checks"][-1]["compatibility_note"] = (
+                    "Forced named-tool calls use finish_reason=stop in this vLLM "
+                    "version; structured function name, ID and arguments are checked."
+                )
+            call, values = check_tool(answer, thinking, expected_finish)
             passed()
             if label == "tool-auto":
                 # Whitelisted local arithmetic only, never arbitrary model code.

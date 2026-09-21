@@ -1,0 +1,192 @@
+{
+  "date": "2026-09-21",
+  "deployment_label": "VM100",
+  "engine": "vllm",
+  "served_model": "deepseek-v41-flash",
+  "status": "passed",
+  "reasoning_field": "reasoning",
+  "started_unix": 1789997512.8839555,
+  "finished_unix": 1789997515.9663608,
+  "script": "scripts/smoke_api.py",
+  "checks": [
+    {
+      "case": "plain-chat",
+      "status": "passed",
+      "http_status": 200,
+      "stream": false,
+      "reasoning_effort": "none",
+      "finish_reason": "stop",
+      "reasoning_present": false,
+      "tool_calls": [],
+      "compatibility_note": null
+    },
+    {
+      "case": "reasoning-high",
+      "status": "passed",
+      "http_status": 200,
+      "stream": false,
+      "reasoning_effort": "high",
+      "finish_reason": "stop",
+      "reasoning_present": true,
+      "tool_calls": [],
+      "compatibility_note": null
+    },
+    {
+      "case": "reasoning-stream",
+      "status": "passed",
+      "http_status": 200,
+      "stream": true,
+      "reasoning_effort": "high",
+      "finish_reason": "stop",
+      "reasoning_present": true,
+      "tool_calls": [],
+      "compatibility_note": null
+    },
+    {
+      "case": "reasoning-none",
+      "status": "passed",
+      "http_status": 200,
+      "stream": false,
+      "reasoning_effort": "none",
+      "finish_reason": "stop",
+      "reasoning_present": false,
+      "tool_calls": [],
+      "compatibility_note": null
+    },
+    {
+      "case": "tool-auto",
+      "status": "passed",
+      "http_status": 200,
+      "stream": false,
+      "reasoning_effort": "none",
+      "finish_reason": "tool_calls",
+      "reasoning_present": false,
+      "tool_calls": [
+        {
+          "name": "multiply_integers",
+          "arguments": {
+            "a": 17,
+            "b": 23
+          },
+          "id_present": true
+        }
+      ],
+      "compatibility_note": null
+    },
+    {
+      "case": "tool-roundtrip",
+      "status": "passed",
+      "http_status": 200,
+      "stream": false,
+      "reasoning_effort": "none",
+      "finish_reason": "stop",
+      "reasoning_present": false,
+      "tool_calls": [],
+      "compatibility_note": null
+    },
+    {
+      "case": "tool-stream",
+      "status": "passed",
+      "http_status": 200,
+      "stream": true,
+      "reasoning_effort": "none",
+      "finish_reason": "tool_calls",
+      "reasoning_present": false,
+      "tool_calls": [
+        {
+          "name": "multiply_integers",
+          "arguments": {
+            "a": 17,
+            "b": 23
+          },
+          "id_present": true
+        }
+      ],
+      "compatibility_note": null
+    },
+    {
+      "case": "reasoning-tool",
+      "status": "passed",
+      "http_status": 200,
+      "stream": false,
+      "reasoning_effort": "high",
+      "finish_reason": "tool_calls",
+      "reasoning_present": true,
+      "tool_calls": [
+        {
+          "name": "multiply_integers",
+          "arguments": {
+            "a": 17,
+            "b": 23
+          },
+          "id_present": true
+        }
+      ],
+      "compatibility_note": null
+    },
+    {
+      "case": "reasoning-tool-stream",
+      "status": "passed",
+      "http_status": 200,
+      "stream": true,
+      "reasoning_effort": "high",
+      "finish_reason": "tool_calls",
+      "reasoning_present": true,
+      "tool_calls": [
+        {
+          "name": "multiply_integers",
+          "arguments": {
+            "a": 17,
+            "b": 23
+          },
+          "id_present": true
+        }
+      ],
+      "compatibility_note": null
+    },
+    {
+      "case": "tool-required",
+      "status": "passed",
+      "http_status": 200,
+      "stream": false,
+      "reasoning_effort": "none",
+      "finish_reason": "tool_calls",
+      "reasoning_present": false,
+      "tool_calls": [
+        {
+          "name": "multiply_integers",
+          "arguments": {
+            "a": 17,
+            "b": 23
+          },
+          "id_present": true
+        }
+      ],
+      "compatibility_note": null
+    },
+    {
+      "case": "tool-named",
+      "status": "passed",
+      "http_status": 200,
+      "stream": false,
+      "reasoning_effort": "none",
+      "finish_reason": "stop",
+      "reasoning_present": false,
+      "tool_calls": [
+        {
+          "name": "multiply_integers",
+          "arguments": {
+            "a": 17,
+            "b": 23
+          },
+          "id_present": true
+        }
+      ],
+      "compatibility_note": "Forced named-tool calls use finish_reason=stop in this vLLM version; structured function name, ID and arguments are checked."
+    }
+  ],
+  "caveats": [
+    "vLLM emits reasoning, not SGLang reasoning_content",
+    "Forced named tool choice returns structured tool_calls with finish_reason=stop; auto/required use tool_calls"
+  ]
+}
