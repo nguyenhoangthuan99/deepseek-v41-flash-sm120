@@ -117,6 +117,65 @@ extensions, and the required DeepGEMM base build. The overlay applies three
 FlashInfer patches but only **copies** the DeepGEMM page-32 patch/build
 script; it does not apply/build that patch.
 
+## Upstream contribution assessment
+
+Read-only assessment on 2026-09-21, against vLLM
+[`606d124b`](https://github.com/vllm-project/vllm/commit/606d124b377e6462fe0f9076df4d50c88e4dcf48)
+and FlashInfer
+[`6870e3ff`](https://github.com/flashinfer-ai/flashinfer/commit/6870e3fff46b1e768ad423ea48d286e6f3e250fe).
+The [structured assessment](../results/vllm-upstream-assessment.json) records
+exact source links, existing overlap, proposed boundaries and missing proof.
+No upstream issue, PR or candidate code branch was created by this assessment.
+
+**Best first PR: the FP4 activation quantization-group fix**, independent of
+performance tuning. Upstream's
+[FP4 expert permutation call](https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/vllm/model_executor/layers/fused_moe/experts/deep_gemm_moe.py)
+omits `block_size=self._ACT_BLOCK_K`, while its
+[permutation helper](https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/vllm/model_executor/layers/fused_moe/deep_gemm_utils.py)
+otherwise derives activation-scale width from scheduling alignment. With an
+existing 64-row alignment scope, this conflicts with the experts' 128-element
+activation quantization groups. The default 128 alignment is not claimed to
+fail. Our regression uses the existing alignment API, so the new tuning knob
+is not required to expose the contract mismatch.
+
+Extract only that argument and
+`test_fp4_experts_preserve_quant_groups_with_smaller_row_tiles` into a small
+two-file PR. **Before submission:** rebase on current upstream, demonstrate
+fail-before/pass-after there, and run affected FP4 numerical regressions.
+Historical fork test success is not a substitute for that fresh evidence.
+
+| Candidate | Target and recommendation |
+| --- | --- |
+| FP4 quantization-group preservation | vLLM: strongest correctness candidate; one explicit argument plus behavioral regression. |
+| Shared compressor mapping ownership | vLLM: consider regression coverage only. The final production restoration already matches inspected upstream. Do not call the test graph-replay coverage. |
+| Public FlashInfer b12x MXFP8 adapter | vLLM: separate opt-in performance PR using public `mm_mxfp8(..., backend="b12x")`, without private split-K internals. Compare to CUTLASS **and existing native b12x**. |
+| Small-M MoE row alignment | vLLM: separate policy/performance PR after the correctness fix. Validate hardware scope, workspace sizing, configuration hash and concurrency; measured scope is not all DeepGEMM GPUs. |
+| Split-K kernel/planning | FlashInfer first, then vLLM integration. Private compiler/alpha helpers and model-specific shape heuristics are not a stable upstream API. |
+| Sparse-MLA page32/masking backports | FlashInfer: do not submit wholesale. Current source has substantial equivalent page/mask/zero-row handling and poisoned-cache tests; investigate only residual bugs or coverage gaps. |
+
+Upstream already has a
+[native `B12xMxfp8LinearKernel`](https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/vllm/model_executor/kernels/linear/mxfp8/b12x.py),
+which is different from our FlashInfer adapter. Related work includes vLLM
+[#54223](https://github.com/vllm-project/vllm/pull/54223),
+[#55651](https://github.com/vllm-project/vllm/pull/55651), and FlashInfer
+[#5174](https://github.com/flashinfer-ai/flashinfer/pull/5174). Coordinate with
+those changes; scoped searches are not exhaustive duplicate exclusion.
+
+Performance PRs need **independent measurements**: our same-config tuning
+A/B enabled dense and MoE changes together. They also need released-dependency
+reproducibility, cold-cache warmup and graph-lifetime coverage, supported
+hardware/dtype/fallback tests, and numerical gates appropriate to non-bitwise
+split-K. The unexplained VM100 warmup fault remains a validation concern, not
+a proved defect in a particular kernel.
+
+Follow the inspected
+[vLLM contribution policy](https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/docs/contributing/README.md):
+the human submitter reviews every changed line and validates behavior,
+discloses AI assistance with attribution, confirms contribution rights and
+signs off commits under the DCO. New custom ops require schemas/meta functions
+and `torch.library.opcheck` coverage. No such upstream-ready validation or
+human sign-off is implied by this source assessment.
+
 ## Historical vLLM tuning and long context on VM106
 
 The earlier [vLLM tuning A/B](../results/vllm-tuned-ab-summary.json) compared

@@ -72,6 +72,11 @@ extensions, and the required DeepGEMM base build must be established before
 the documented two-image build path can be treated as reproducible. The
 Dockerfile's self-build comments are not proof that a clean build passed.
 
+An [upstream contribution assessment](docs/RESULTS.md#upstream-contribution-assessment)
+identifies the FP4 quantization-group fix as the strongest first PR candidate,
+separates performance work and existing upstream overlap, and records the
+remaining validation requirements. No upstream PR or issue has been opened.
+
 ## What is pinned
 
 [versions.json](versions.json) records the source, dependency, backport, and historical image identities.

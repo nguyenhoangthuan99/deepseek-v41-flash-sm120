@@ -1,0 +1,112 @@
+{
+  "date": "2026-09-21",
+  "status": "read-only source assessment; no upstream PR, issue or code branch created",
+  "vllm_upstream_snapshot": "606d124b377e6462fe0f9076df4d50c88e4dcf48",
+  "flashinfer_upstream_snapshot": "6870e3fff46b1e768ad423ea48d286e6f3e250fe",
+  "fork_snapshot": "4980e06225532feca2ebad8c834dab3f7739acb9",
+  "recommended_first_pr": {
+    "title": "[Bugfix][MoE] Preserve FP4 activation quantization groups during permutation",
+    "target": "vllm-project/vllm",
+    "scope": [
+      "Add block_size=self._ACT_BLOCK_K to DeepGemmFP4Experts.apply permutation call",
+      "Extract test_fp4_experts_preserve_quant_groups_with_smaller_row_tiles into existing tests/kernels/moe/test_deepgemm.py"
+    ],
+    "rationale": "Scheduling alignment and activation quantization group width are different contracts. The helper otherwise derives scale width from the alignment cap. Existing upstream mk_alignment_scope(64) exposes the mismatch; the new tuning config is not required.",
+    "upstream_status": "Inspected snapshot omits explicit block_size and equivalent alignment64/128 output regression.",
+    "claim_limit": "Not a claim that default alignment128 always fails. A fresh fail-before/pass-after run on the upstream snapshot has not been performed.",
+    "exclude": [
+      "new alignment configuration field",
+      "dense backend/split-K changes",
+      "deployment scripts/images",
+      "unrelated test cleanup"
+    ],
+    "before_submission": [
+      "Rebase minimal two-file change onto current upstream",
+      "Show regression fails without the argument and passes with it on compatible SM120/DeepGEMM",
+      "Run affected existing FP4 numerical tests",
+      "Document SM120-only regression skip and assess supported SM100 coverage"
+    ]
+  },
+  "other_candidates": [
+    {
+      "candidate": "Shared compressor mapping ownership regression",
+      "target": "vllm-project/vllm",
+      "priority": "secondary",
+      "upstream_overlap": "Final production mapping implementation already matches upstream; only the reuse_mapping test coverage is new.",
+      "next_step": "Consider test-only coverage of a mapping already populated by another attention group; do not claim new production fix or graph replay coverage."
+    },
+    {
+      "candidate": "Public FlashInfer b12x MXFP8 integration",
+      "target": "vllm-project/vllm",
+      "priority": "promising separate performance PR",
+      "upstream_overlap": "Native B12xMxfp8LinearKernel exists. The inspected registry lacks our separate FlashInferB12xMxfp8LinearKernel.",
+      "before_submission": [
+        "Use public mm_mxfp8 backend=b12x integration without private split-K internals",
+        "Compare against both CUTLASS and existing native b12x",
+        "Reconcile current upstream dependency pins and shape eligibility work",
+        "Preserve upstream preprocessed-weight support and JIT warmup conventions",
+        "Collect isolated performance/quality/fallback evidence"
+      ]
+    },
+    {
+      "candidate": "Small-M FP4 MoE alignment policy",
+      "target": "vllm-project/vllm",
+      "priority": "promising separate performance PR after correctness fix",
+      "upstream_overlap": "Config knob absent in inspected upstream; alignment infrastructure already exists.",
+      "before_submission": [
+        "Measure independently from dense tuning",
+        "Agree expert-local policy versus permanent config knob",
+        "Validate or gate hardware scope: explicit64 currently is not restricted to SM120",
+        "Prove workspace sizing, quant groups, configuration hash, skewed routing and host concurrency behavior"
+      ]
+    },
+    {
+      "candidate": "Split-K kernel and planning",
+      "target": "flashinfer-ai/flashinfer first, vLLM integration later",
+      "priority": "not ready as carried",
+      "risks": [
+        "Private compile/alpha helper imports and internal scheduler-stride convention",
+        "Model/TP-specific shape and split-count heuristics",
+        "Cold-cache warmup, graph lifetime, multiple devices/streams and opcheck coverage gaps",
+        "FP32 reduction order changes; not bit-identical"
+      ]
+    },
+    {
+      "candidate": "FlashInfer sparse-MLA page32 and masking patches",
+      "target": "flashinfer-ai/flashinfer",
+      "priority": "do not submit wholesale duplicate patches",
+      "upstream_overlap": "Current source has runtime page geometry, invalid-probability masking, zero-row KV handling and poisoned-cache tests. Related page32 PR5174 exists.",
+      "next_step": "Keep old-version backports in deployment kit; contribute only demonstrated current-main residual failures or targeted missing test coverage."
+    }
+  ],
+  "evidence_limits": [
+    "Historical VM106 serving A/B enabled dense and MoE optimizations together; it does not isolate either proposed performance PR.",
+    "VM100-versus-historical-SGLang benchmark is not causal tuning isolation.",
+    "No candidate was rebased, built or tested on official upstream during this source assessment.",
+    "VM100 illegal-address root cause remains unisolated after cache/timing changes.",
+    "Measured FlashInfer0.6.18 and CUTLASS DSL4.6.2 differ from inspected upstream requirements0.6.18.post1 and4.7.1; clean build remains unverified.",
+    "Scoped issue searches found overlap but do not establish exhaustive duplicate exclusion."
+  ],
+  "submission_requirements": [
+    "Human submitter reviews every changed line and validates behavior end-to-end",
+    "Disclose nontrivial AI assistance and add required attribution trailers",
+    "Contributor confirms DCO rights and signs off commits",
+    "Provide tagged PR title, test plan and actual results",
+    "For new custom ops, supply schema/meta implementation and torch.library.opcheck coverage"
+  ],
+  "sources": {
+    "upstream_fp4_experts": "https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/vllm/model_executor/layers/fused_moe/experts/deep_gemm_moe.py",
+    "upstream_permutation": "https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/vllm/model_executor/layers/fused_moe/deep_gemm_utils.py",
+    "upstream_native_b12x": "https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/vllm/model_executor/kernels/linear/mxfp8/b12x.py",
+    "upstream_linear_registry": "https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/vllm/model_executor/kernels/linear/__init__.py",
+    "upstream_compressor": "https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/vllm/models/deepseek_v41/compressor.py",
+    "upstream_requirements": "https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/requirements/cuda.txt",
+    "contributing": "https://github.com/vllm-project/vllm/blob/606d124b377e6462fe0f9076df4d50c88e4dcf48/docs/contributing/README.md",
+    "flashinfer_kv_handling": "https://github.com/flashinfer-ai/flashinfer/blob/6870e3fff46b1e768ad423ea48d286e6f3e250fe/include/flashinfer/attention/sparse_mla_sm120/common/kv_cache_io.cuh",
+    "flashinfer_regressions": "https://github.com/flashinfer-ai/flashinfer/blob/6870e3fff46b1e768ad423ea48d286e6f3e250fe/tests/attention/test_sparse_mla_sm120.py",
+    "related_page32_pr": "https://github.com/flashinfer-ai/flashinfer/pull/5174",
+    "related_shape_eligibility_pr": "https://github.com/vllm-project/vllm/pull/54223",
+    "related_toolkit_eligibility_pr": "https://github.com/vllm-project/vllm/pull/55651",
+    "related_sm12x_enablement_pr": "https://github.com/vllm-project/vllm/pull/41834"
+  }
+}
