@@ -58,19 +58,50 @@ See [deployment and rollback instructions](docs/DEPLOYMENT.md).
 
 ### vLLM build prerequisites and limits
 
-The local `BASE_IMAGE` and `EXT_IMAGE` defaults are **not publicly pullable
-images**. The validated image reused retained extensions compiled from the
-pinned fork; stock upstream vLLM extensions lack required custom ops.
-`Dockerfile.vllm` overlays the fork's Python source and applies three
-FlashInfer SM120 patches. The DeepGEMM page-32 patch and build script are
-**copied for base rebuilds, not applied by the overlay**.
+Build every prerequisite from public sources; no retained or pre-built images
+are required:
 
-The fork Dockerfile currently pins FlashInfer **`0.6.18.post1`**, while the
-overlay asserts **`0.6.18`** from `versions.json`. A clean self-build remains
-**unverified**: matching runtime, FlashInfer patch/version pins, fork-compiled
-extensions, and the required DeepGEMM base build must be established before
-the documented two-image build path can be treated as reproducible. The
-Dockerfile's self-build comments are not proof that a clean build passed.
+```bash
+./docker-build-vllm.sh             # base, extension, then overlay
+STEPS=base ./docker-build-vllm.sh  # or one stage at a time
+```
+
+| Image | Contents |
+| --- | --- |
+| `dsv41-vllm-base:sm120` | The pinned fork commit built with its own `docker/Dockerfile` (target `vllm-openai`): CUDA 13.0.3, torch 2.13.0+cu130, FlashInfer `0.6.18.post1`, fork-compiled extensions. |
+| `dsv41-vllm-ext:sm120` | `docker/Dockerfile.vllm-ext`: the fork package tree plus a DeepGEMM `_C` rebuilt from the pinned public DeepGEMM commit with the SM120 page-32 gates, keeping the stock build as `_C*.so.before-page32`. |
+| `dsv41-vllm:sm120` | `Dockerfile.vllm`: the pinned source tree over the base, compiled artifacts filled in from the extension image, and the three FlashInfer SM120 patches applied and verified. |
+
+Kernels are restricted to SM120 (`TORCH_CUDA_ARCH_LIST=12.0`). vLLM reports
+`CUDA supported target architectures: 12.0` and skips Machete, AllSpark,
+`scaled_mm_c3x_sm90`, SM10x/11x NVFP4/MXFP4 and CUTLASS MLA, while FlashMLA
+reports `unsupported CUDA architecture 12.0`. Upstream vllm-flash-attn resolves
+FA2 to `8.0+PTX` — PTX only, JIT-compiled on SM120 — and FA3 to an empty list,
+so no Hopper kernels are targeted; the `_sm80` source names in the build log are
+that PTX fallback, not an extra architecture.
+
+The fork's Dockerfile defaults to `max_jobs=2`, which serializes the ~410-target
+CUDA compile; the script raises `MAX_JOBS` to the host core count. Override
+`MAX_JOBS` and `NVCC_THREADS` on memory-constrained hosts.
+
+The FlashInfer pin follows the fork's own requirement (`0.6.18.post1`). The
+three SM120 patches apply cleanly to that release and touch source trees that
+are byte-identical to `0.6.18`.
+
+**Rebuild status.** The three images were built from this repository on an
+8× RTX PRO 6000 (SM120) host. The engine image passes its baked-in overlay
+verification, reports the fork custom ops and tuned kernels, carries the patched
+DeepGEMM extension with an intact stock backup, and shows all three FlashInfer
+patches applied. Serving the full checkpoint with the measured configuration
+(TP8, DSpark K3, `FULL_DECODE_ONLY` graphs, 1M context, block 64, b12x and MoE
+alignment 64) reaches `Application startup complete` with successful CUDA graph
+capture, passes 11/11 API smoke tests, and reproduces the retained deployment's
+correctness result: 9/10 exact-answer and 5/5 retrieval, including the same
+`reverse` failure. See [results/](results/) for the recorded artifacts.
+
+The retained local-only images (`vllm-dsv4-vision`, the original
+`dsv41-vllm-ext`) are recorded in `versions.json` under
+`vllm.historical_deployment`. They are not required by this path.
 
 An [upstream contribution assessment](docs/RESULTS.md#upstream-contribution-assessment)
 identifies the FP4 quantization-group fix as the strongest first PR candidate,

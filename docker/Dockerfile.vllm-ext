@@ -1,0 +1,102 @@
+# syntax=docker/dockerfile:1
+# Extension image for the vLLM engine: the pinned fork's compiled vLLM package
+# tree, plus a DeepGEMM `_C` rebuilt with the SM120 page-32 gates applied.
+#
+# Everything here is derived from public sources:
+#   * BASE_IMAGE is the fork engine image built by docker-build-vllm.sh from the
+#     pinned fork commit (torch/CUDA/FlashInfer plus fork-compiled extensions).
+#   * DeepGEMM is cloned from its public repository at the commit pinned in
+#     vllm/cmake/external_projects/deepgemm.cmake.
+#
+# The overlay in Dockerfile.vllm takes compiled artifacts from this image, so it
+# needs both the fork's custom ops and the page-32 DeepGEMM gates. Neither the
+# base image nor the overlay builds DeepGEMM, which is why that rebuild lives
+# here.
+ARG BASE_IMAGE=dsv41-vllm-base:sm120
+ARG DEEPGEMM_REPO=https://github.com/vllm-project/DeepGEMM.git
+ARG DEEPGEMM_COMMIT=a6bbb8000161c0dc3a85a0300a905f76898a7913
+ARG CUDA_VERSION=13.0.3
+
+FROM ${BASE_IMAGE} AS ext
+
+ARG DEEPGEMM_REPO
+ARG DEEPGEMM_COMMIT
+ARG CUDA_VERSION
+
+SHELL ["/bin/bash", "-c"]
+
+# The runtime base ships nvcc and the CUDA runtime, but not every development
+# header torch's ATen includes pull in (cusparse.h was the first casualty), nor
+# the elfutils headers that DeepGEMM's third-party/deep_jit submodule needs.
+# Install the CUDA development libraries matching the base toolkit instead of
+# hand-picking individual -dev packages.
+RUN set -eux; \
+    cuda_pkg="cuda-libraries-dev-$(echo "${CUDA_VERSION}" | cut -d. -f1)-$(echo "${CUDA_VERSION}" | cut -d. -f2)"; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        git ca-certificates patch libdw-dev libelf-dev zlib1g-dev "${cuda_pkg}"; \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/dsv41/deepgemm-build
+COPY vllm/tools/build_deepgemm_C.py vllm/tools/deepgemm-sm120-page32.patch ./
+
+RUN set -eux; \
+    git init -q /opt/dsv41/deepgemm-src; \
+    cd /opt/dsv41/deepgemm-src; \
+    git remote add origin "${DEEPGEMM_REPO}"; \
+    git fetch -q --depth 1 origin "${DEEPGEMM_COMMIT}"; \
+    git checkout -q FETCH_HEAD; \
+    git submodule update -q --init --recursive --depth 1; \
+    test -f csrc/python_api.cpp; \
+    test -d deep_gemm/include; \
+    test -d third-party/cutlass/include
+
+# The DeepGEMM extension builder links the unversioned `libnvrtc` name, which
+# CUDA 13 does not ship; create it when the base image lacks it.
+RUN set -eux; \
+    cuda_lib=$( [ -d /usr/local/cuda/lib64 ] && echo /usr/local/cuda/lib64 || echo /usr/local/cuda/targets/x86_64-linux/lib ); \
+    if [ ! -e "${cuda_lib}/libnvrtc.so" ]; then \
+        nvrtc=$(ls "${cuda_lib}"/libnvrtc.so.* | head -1); \
+        ln -s "$(basename "${nvrtc}")" "${cuda_lib}/libnvrtc.so"; \
+    fi; \
+    test -e "${cuda_lib}/libnvrtc.so"
+
+RUN set -eux; \
+    cd /opt/dsv41/deepgemm-src; \
+    patch -p1 --fuzz=0 --forward < /opt/dsv41/deepgemm-build/deepgemm-sm120-page32.patch; \
+    test -d /usr/include/python3.12; \
+    mkdir -p /opt/dsv41/deepgemm-out; \
+    python3 /opt/dsv41/deepgemm-build/build_deepgemm_C.py \
+        /opt/dsv41/deepgemm-src /opt/dsv41/deepgemm-out /usr/bin/python3; \
+    ls -l /opt/dsv41/deepgemm-out
+
+# Replace the stock extension in the fork's package tree, keeping the unpatched
+# build as a rollback copy. The overlay resolves DeepGEMM from this tree.
+#
+# The base tree carries one _C build per supported CPython ABI; only the
+# interpreter this image runs can ever load one, so drop the others instead of
+# shipping a dozen unpatched multi-megabyte copies.
+RUN set -eux; \
+    dg=/usr/local/lib/python3.12/dist-packages/vllm/third_party/deep_gemm; \
+    shopt -s nullglob; \
+    suffix=$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))'); \
+    test -n "$suffix"; \
+    built=(/opt/dsv41/deepgemm-out/_C*.so); \
+    test "${#built[@]}" -ge 1; \
+    for f in "${built[@]}"; do \
+        name=$(basename "$f"); \
+        test "$name" = "_C${suffix}" || { echo "unexpected extension name: $name" >&2; exit 1; }; \
+        test -f "$dg/$name" || { echo "base tree is missing $name" >&2; exit 1; }; \
+        if [ ! -e "$dg/$name.before-page32" ]; then mv "$dg/$name" "$dg/$name.before-page32"; fi; \
+        cp "$f" "$dg/$name"; \
+    done; \
+    for stale in "$dg"/_C*.so; do \
+        case "$stale" in *_C"$suffix"|*_C"$suffix".before-page32) continue ;; esac; \
+        rm -f -- "$stale"; \
+    done; \
+    rm -rf /opt/dsv41/deepgemm-src /opt/dsv41/deepgemm-out; \
+    ls -l "$dg"
+
+LABEL org.opencontainers.image.title="DeepSeek-V4.1-Flash SM120 vLLM extensions" \
+      org.opencontainers.image.description="Fork-compiled vLLM package tree with SM120 page-32 DeepGEMM gates" \
+      org.deepseek-v41-flash-sm120.deepgemm.commit="${DEEPGEMM_COMMIT}"

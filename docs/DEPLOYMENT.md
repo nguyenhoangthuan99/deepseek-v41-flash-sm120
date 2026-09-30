@@ -115,26 +115,53 @@ The workload SHA-256 is
 `cadc39231f472c1221324539949cec41871e558f495bf37d0efdbaf3791e31bf`.
 Keep raw local outputs private; commit only sanitized summaries.
 
-### Image construction: retained artifacts versus clean rebuild
+### Image construction from public sources
 
-`Dockerfile.vllm` overlays the pinned fork's Python tree and takes compiled
-artifacts from `EXT_IMAGE`. The validated deployment used retained
-**fork-built extensions**, including custom ops absent from stock upstream
-vLLM. The default local `BASE_IMAGE` and `EXT_IMAGE` names are **not publicly
-pullable**. Having this repository alone does not supply those image layers.
+`docker-build-vllm.sh` builds all three images; no pre-built prerequisite images
+are needed.
 
-The fork Dockerfile currently pins FlashInfer **`0.6.18.post1`**; the overlay
-checks **`0.6.18`** from `versions.json`. **A clean self-build has not been
-verified.** Before treating the two-image build recipe in the Dockerfile
-header as reproducible, establish matching FlashInfer version/patch pins,
-compatible Python/CUDA runtime and fork-commit extension artifacts, and the
-required DeepGEMM base build. Do not substitute a stock extension image or
-bypass the version assertions to conceal a mismatch.
+```bash
+./docker-build-vllm.sh             # base, extension, then overlay
+STEPS=base ./docker-build-vllm.sh  # or one stage at a time
+```
 
-The overlay applies the three FlashInfer SM120 patches. It **copies** the
-DeepGEMM page-32 patch and build script into `/opt/dsv41/vllm-tools/` for base
-rebuilds; it does **not apply or build that DeepGEMM patch**. Successful
-serving of the retained image is not proof of a clean base/extension rebuild.
+1. `dsv41-vllm-base:sm120` — the pinned fork commit built with its own
+   `docker/Dockerfile` (target `vllm-openai`). The build context is a tagged git
+   export of the pinned commit, because neither the fork nor this repository
+   carries tags and the fork derives its wheel version from `setuptools_scm`.
+   Accepted build args: `CUDA_VERSION`, `PYTHON_VERSION`, `FLASHINFER_VERSION`,
+   `TORCH_CUDA_ARCH_LIST`, `MAX_JOBS`, `NVCC_THREADS`.
+2. `dsv41-vllm-ext:sm120` — `docker/Dockerfile.vllm-ext` clones the public
+   DeepGEMM repository at the commit pinned in
+   `vllm/cmake/external_projects/deepgemm.cmake`, applies
+   `deepgemm-sm120-page32.patch`, rebuilds `_C`, and stages it over the base's
+   package tree while keeping the stock extension as
+   `_C<abi>.so.before-page32`. Only the running interpreter's ABI variant is
+   kept; the other per-ABI copies are dropped.
+3. `dsv41-vllm:sm120` — `Dockerfile.vllm` copies the pinned Python tree, fills
+   compiled artifacts from the extension image, applies the three FlashInfer
+   SM120 patches, and runs the overlay verification baked into the image.
+
+`MAX_JOBS` matters: the fork's Dockerfile defaults to `max_jobs=2`, so the
+~410-target CUDA compile runs two files at a time unless the script raises it to
+the host core count.
+
+The FlashInfer pin now matches the fork's requirement (`0.6.18.post1`); the
+three SM120 patches apply cleanly to it and touch source trees that are
+byte-identical to `0.6.18`. Do not bypass the version assertions in
+`Dockerfile.vllm` to conceal a mismatch.
+
+**Validation of the rebuilt images.** The images were built from this repository
+on an 8× RTX PRO 6000 (SM120) host and served the full checkpoint with the
+measured configuration. Recorded results: overlay verification passed
+(fork custom ops, tuned SM120 kernels, patched DeepGEMM with intact stock
+backup, all three FlashInfer patches), `Application startup complete` with
+successful CUDA graph capture, 11/11 API smoke tests, and 9/10 exact-answer plus
+5/5 retrieval with the same `reverse` failure the retained deployment shows.
+
+Serving a locally rebuilt image does not by itself re-validate the SGLang side,
+the VM100 deployment, or the published benchmark numbers; those remain tied to
+the artifacts recorded in `results/` and `versions.json`.
 
 ### Startup debugging and recovery limits
 

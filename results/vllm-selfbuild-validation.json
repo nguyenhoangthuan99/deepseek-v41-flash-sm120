@@ -1,0 +1,117 @@
+{
+  "title": "vLLM engine image rebuilt from public sources",
+  "question": "Can a user who clones this repository build the engine image without any pre-built or retained prerequisite image?",
+  "answer": "Yes. docker-build-vllm.sh builds the runtime base, the compiled extension image and the overlay engine image from public inputs only.",
+  "date": "2026-09-30",
+  "host": {
+    "gpus": "8x NVIDIA RTX PRO 6000 Blackwell Server Edition (SM120)",
+    "driver": "580.173.02",
+    "cpu_cores": 144,
+    "disk_free_gb_before_build": 190
+  },
+  "build": {
+    "script": "docker-build-vllm.sh",
+    "vllm_commit": "005b0af0d996d354dde582152909be96f7feac07",
+    "cuda_version": "13.0.3",
+    "torch": "2.13.0+cu130",
+    "flashinfer": "0.6.18.post1",
+    "torch_cuda_arch_list": "12.0",
+    "max_jobs": 64,
+    "nvcc_threads": 2,
+    "images": {
+      "base": "dsv41-vllm-base:sm120 sha256:a6592fe5d395",
+      "ext": "dsv41-vllm-ext:sm120 sha256:2ebccb984533",
+      "engine": "dsv41-vllm:sm120 sha256:ad6f3ef8625c3c47d3047ea436cecbe845a8dd41248024f38b1599e2c5bb83e9"
+    },
+    "public_inputs_only": [
+      "the pinned fork source committed in this repository (vllm/ submodule)",
+      "pytorch/manylinux2_28-builder:cuda13.0-78e737ad29420ffc4800e677c51e2a852caf8359",
+      "nvidia/cuda:13.0.3-base-ubuntu24.04",
+      "PyPI, download.pytorch.org/whl and flashinfer.ai/whl wheels",
+      "https://github.com/vllm-project/DeepGEMM.git at a6bbb8000161c0dc3a85a0300a905f76898a7913"
+    ],
+    "arch_gating_evidence": [
+      "CUDA supported target architectures: 12.0",
+      "Not building Machete kernels as no compatible archs found in CUDA target architectures",
+      "Not building AllSpark kernels as no compatible archs found in CUDA target architectures",
+      "Not building scaled_mm_c3x_sm90 as no compatible archs found in CUDA target architectures",
+      "Not building SM10x/11x NVFP4/MXFP4 as no compatible archs were found",
+      "Not building CUTLASS MLA as no compatible archs were found",
+      "FlashMLA will not compile: unsupported CUDA architecture 12.0",
+      "FA2_ARCHS: 8.0+PTX (PTX only, JIT-compiled on SM120)",
+      "FA3_ARCHS: (empty)"
+    ],
+    "notes": [
+      "The fork's Dockerfile hardcodes ARG max_jobs=2, which serializes the ~410-target CUDA compile; the script raises MAX_JOBS to the host core count.",
+      "Neither the fork nor this repository carries git tags, so the build context is a tagged synthetic export of the pinned commit and setuptools_scm resolves the wheel version from that tag."
+    ],
+    "vllm_commit_note": "The fork main was force-updated after the build; the previously pinned 4980e06225532feca2ebad8c834dab3f7739acb9 and the current 005b0af0d996d354dde582152909be96f7feac07 share tree 803434a5702fa871123b1ec370b6e96c47d00c2e, so the compiled content is unaffected.",
+    "rebuild_note": "All three images were rebuilt after the fork main was force-updated to 005b0af0d996d354dde582152909be96f7feac07 (identical tree). The repin rebuild took 16 minutes with MAX_JOBS=64, and the rebuilt engine image was re-validated: image checks passed, serving reached Application startup complete, 11/11 API smoke tests passed, and correctness again gave 9/10 exact and 5/5 retrieval with only the reverse failure."
+  },
+  "image_verification": {
+    "overlay_tree_wins_import_resolution": true,
+    "fork_custom_ops_present": "vocab_parallel_embedding in _C_stable_libtorch.abi3.so",
+    "tuned_sm120_kernels_present": [
+      "vllm.model_executor.kernels.linear.mxfp8.flashinfer_sm120",
+      "deep_gemm_moe_small_m_alignment config knob"
+    ],
+    "deepgemm_page32_patched": "compiled _C carries the relaxed SM120 gate string '(not is_fp4 and (block_kv == 32 or block_kv == 64))'",
+    "deepgemm_stock_backup_retained": "compiled stock _C kept as _C<abi>.so.before-page32 with '(not is_fp4 and block_kv == 64)'",
+    "flashinfer": "0.6.18.post1 with page32, masked-logits and masked-values patches verified in the source tree",
+    "result": "all image checks passed"
+  },
+  "serving_validation": {
+    "config": "TP8, DSpark K3, FULL_DECODE_ONLY CUDA graphs, 1M context, block 64, gpu-memory-utilization 0.85, linear_backend flashinfer_b12x, deep_gemm_moe_small_m_alignment 64",
+    "startup": "Application startup complete; graph capturing finished in 6 secs on every TP rank; no illegal memory access",
+    "runtime_kernel_selection": [
+      "deep_gemm not found in site-packages, trying vendored vllm.third_party.deep_gemm",
+      "DeepGEMM PDL enabled on vllm.third_party.deep_gemm",
+      "DeepGEMM E8M0 enabled on current platform",
+      "Using 'DEEPGEMM_MXFP4' Mxfp4 MoE backend",
+      "Using DeepGemmFP4Experts",
+      "B12xMxfp8GemmRunner selected for mxfp8_gemm shapes",
+      "FA2_AVAILABLE True, has_deep_gemm True"
+    ],
+    "api_smoke": "11/11 passed (plain-chat, reasoning-high, reasoning-stream, reasoning-none, tool-auto, tool-roundtrip, tool-stream, reasoning-tool, reasoning-tool-stream, tool-required, tool-named)",
+    "correctness": {
+      "exact": "9/10",
+      "retrieval": "5/5",
+      "determinism": "pass",
+      "known_failure": "reverse (expected thedwards, got thewards) - identical to the retained deployment"
+    },
+    "revalidated_at_new_pin": true
+  },
+  "matched_benchmark": {
+    "protocol": "168 requests, 21 scenarios, 3 repeats, medians; raw /v1/completions, 128 input / 256 output tokens; client ran inside the serving container",
+    "workload_sha256": "cadc39231f472c1221324539949cec41871e558f495bf37d0efdbaf3791e31bf",
+    "all_scenarios_passed": true,
+    "decode_output_tok_s_median": {
+      "C1": 177.05,
+      "C4": 429.38,
+      "C16": 882.35,
+      "C32": 1215.94
+    },
+    "recorded_retained_image": {
+      "C1": 179.85,
+      "C4": 433.56,
+      "C16": 914.47,
+      "C32": 1226.94
+    },
+    "prefill_ttft_median_ms": {
+      "1024": 179.88,
+      "4096": 547.52,
+      "7168": 924.5
+    },
+    "recorded_retained_image_prefill_ttft_ms": {
+      "1024": 175.89,
+      "4096": 547.06,
+      "7168": 928.08
+    }
+  },
+  "caveats": [
+    "This is not a fresh alternating A/B: the comparison is against previously recorded medians taken on VM100 with the retained image.",
+    "The rebuild ran on a different host of the same GPU model, so small deltas cover host and timing variation as well as any artifact difference.",
+    "The SGLang engine, the VM100 deployment and the published benchmark aggregates were not re-validated here.",
+    "Upstream vllm-flash-attn builds FA3 unconditionally; those Hopper kernels are present but unusable on SM120 and cannot be disabled through a supported flag."
+  ]
+}

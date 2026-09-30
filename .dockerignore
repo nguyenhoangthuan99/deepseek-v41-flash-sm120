@@ -9,6 +9,7 @@
 !licenses/
 !licenses/**
 !docker/
+!docker/Dockerfile.vllm-ext
 !docker/apply_pr.py
 !docker/pr5121.patch
 !docker/pr5121-0.6.18.patch
@@ -28,6 +29,7 @@
 !vllm/tools/flashinfer-sm120-masked-logits.patch
 !vllm/tools/flashinfer-sm120-masked-values.patch
 !vllm/tools/build-deepgemm-sm120-page32.sh
+!vllm/tools/build_deepgemm_C.py
 !vllm/tools/deepgemm-sm120-page32.patch
 # Keep the complete pinned Python tree, not submodule docs/tests or VCS state.
 **/.git

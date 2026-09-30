@@ -1,30 +1,38 @@
 # syntax=docker/dockerfile:1
-# vLLM engine image: pinned fork source overlaid on the validated SM120 base.
+# vLLM engine image: the pinned fork source overlaid on a matching runtime base,
+# with compiled extensions filled in from the extension image.
 #
-# This overlay was validated using LOCAL prerequisite images: the retained
-# CUDA/Python base and a separately packaged fork-built extension tree. Neither
-# is published by this repository. Having the sources and patches in Git does
-# not make the command below a validated clean-clone build.
+# Build everything from public sources with the repository script:
+#   ./docker-build-vllm.sh
 #
-# BASE_IMAGE supplies Torch/CUDA and FlashInfer 0.6.18. EXT_IMAGE supplies the
-# compiled vLLM package tree matching VLLM_COMMIT. Stock base extensions lacked
-# the fork's vocab_parallel_embedding op; using those extensions failed during
-# engine startup. Both fork extensions and generated vllm_flash_attn modules
+# That script builds the two prerequisites and then this overlay:
+#   dsv41-vllm-base:sm120  the pinned fork commit built with its own
+#                          docker/Dockerfile (target vllm-openai).
+#   dsv41-vllm-ext:sm120   docker/Dockerfile.vllm-ext: the fork-compiled package
+#                          tree plus a DeepGEMM _C rebuilt with the SM120
+#                          page-32 gates.
+#   dsv41-vllm:sm120       this overlay.
+#
+# BASE_IMAGE supplies Torch/CUDA and FlashInfer. EXT_IMAGE supplies the compiled
+# vLLM package tree matching VLLM_COMMIT. Stock upstream extensions lack the
+# fork's vocab_parallel_embedding op; using those extensions fails during engine
+# startup. Both the fork extensions and the generated vllm_flash_attn modules
 # must be present, not just the Python source overlay.
 #
-# The fork includes its own docker/Dockerfile, but its current dependencies
-# request FlashInfer 0.6.18.post1 while this tested overlay asserts 0.6.18.
-# Reconcile and validate those pins before claiming a fresh build reproduces
-# this runtime. See versions.json vllm.clean_rebuild_status.
+# The FlashInfer pin follows the fork's own requirements (0.6.18.post1); the
+# three SM120 patches apply cleanly to that release and touch source trees that
+# are byte-identical to 0.6.18.
 #
-# With compatible prerequisite images already available locally:
+# Any other base/extension pair works through the same build args:
 #   docker build -f Dockerfile.vllm \
-#     --build-arg BASE_IMAGE=<compatible-local-base> \
-#     --build-arg EXT_IMAGE=<matching-fork-extension-image> -t dsv41-vllm:sm120 .
+#     --build-arg BASE_IMAGE=<runtime base> \
+#     --build-arg EXT_IMAGE=<matching fork extension image> -t dsv41-vllm:sm120 .
 #
 # Three FlashInfer patches are applied below. The DeepGEMM patch/build script
-# are included as source artifacts only; this overlay does not apply/build them.
-ARG BASE_IMAGE=vllm-dsv4-vision@sha256:f180cdb3cebca971e00d1c29057b80462eec69c524d60f308ef23fd53f5fe031
+# are included as source artifacts for standalone base rebuilds; this overlay
+# does not apply or build them, because the extension image already carries the
+# patched DeepGEMM extension.
+ARG BASE_IMAGE=dsv41-vllm-base:sm120
 ARG EXT_IMAGE=dsv41-vllm-ext:sm120
 FROM ${EXT_IMAGE} AS ext
 FROM ${BASE_IMAGE} AS runtime

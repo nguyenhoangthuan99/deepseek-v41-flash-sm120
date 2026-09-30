@@ -106,16 +106,52 @@ with `AutoRemove=false`**. This is not a fresh validation of rollback
 serving. Save inspection data privately **before** stopping an auto-remove
 container; see the generic rollback procedure in the deployment guide.
 
-### Build provenance is not clean-build proof
+### Engine image rebuilt from public sources (2026-09-30)
 
-The validated vLLM image used retained extensions compiled from the pinned
-fork. The current local `BASE_IMAGE` / `EXT_IMAGE` defaults are not publicly
-pullable. The fork Dockerfile pins FlashInfer **0.6.18.post1**, whereas the
-overlay asserts **0.6.18**. A clean self-build remains **unverified** and
-requires matching dependency/patch pins, compatible runtime and fork-built
-extensions, and the required DeepGEMM base build. The overlay applies three
-FlashInfer patches but only **copies** the DeepGEMM page-32 patch/build
-script; it does not apply/build that patch.
+The VM100 deployment above ran a retained image whose prerequisites were not
+published. `docker-build-vllm.sh` now builds all three images from public inputs
+only, and that path has been executed and validated.
+
+| Item | Result |
+| --- | --- |
+| Images | `dsv41-vllm-base:sm120` `a6592fe5`, `dsv41-vllm-ext:sm120` `2ebccb98`, `dsv41-vllm:sm120` `ad6f3ef8` |
+| Arch gating | `CUDA supported target architectures: 12.0`; Machete, AllSpark, `scaled_mm_c3x_sm90`, SM10x/11x NVFP4/MXFP4 and CUTLASS MLA skipped; FlashMLA reports `unsupported CUDA architecture 12.0` |
+| Overlay checks | fork custom ops, tuned SM120 kernels, patched DeepGEMM with intact stock backup, all three FlashInfer patches |
+| Startup | `Application startup complete`, graph capturing finished on every TP rank |
+| API smoke | 11/11 |
+| Correctness | 9/10 exact, 5/5 retrieval, determinism pass — same `reverse` failure as the retained deployment |
+| Decode medians | C1 177.05, C4 429.38, C16 882.35, C32 1215.94 tok/s (recorded retained: 179.85 / 433.56 / 914.47 / 1226.94) |
+| Prefill medians | 179.88 / 547.52 / 924.50 ms at 1024 / 4096 / 7168 (recorded retained: 175.89 / 547.06 / 928.08) |
+
+Machine-readable evidence: [results/vllm-selfbuild-validation.json](../results/vllm-selfbuild-validation.json).
+This is not a fresh alternating A/B — the deltas are against previously recorded
+medians from a different host of the same GPU model. The SGLang engine, the
+VM100 deployment and the published aggregates above are unchanged by the
+rebuild.
+
+The fork's `main` was force-updated after the first build, so the submodule pin
+moved from `4980e062` to `005b0af0`. Both revisions share tree
+`803434a5702fa871123b1ec370b6e96c47d00c2e`, so the compiled content is
+unchanged; all three images were rebuilt at the new pin (16 minutes with
+`MAX_JOBS=64`) and the engine image re-validated, giving the image IDs in the
+table above.
+
+Two build-time facts are easy to misread: the fork's Dockerfile defaults to
+`max_jobs=2`, which serializes the ~410-target CUDA compile until the script
+raises `MAX_JOBS`; and upstream vllm-flash-attn resolves FA2 to `8.0+PTX` (PTX
+only, JIT-compiled on SM120) while building FA3 unconditionally, so Hopper
+kernels are compiled but unusable on SM120 and cannot be disabled through a
+supported flag.
+
+### Earlier retained-image provenance
+
+The previously validated vLLM image used retained extensions compiled from the
+pinned fork, and its local `vllm-dsv4-vision` / `dsv41-vllm-ext` prerequisites
+were never published. That history is recorded in `versions.json` under
+`vllm.historical_deployment`; the self-build path above no longer depends on it.
+Those retained images were replaced locally by the rebuilt equivalents, so the
+retained artifact is no longer available on this machine — VM100 runs its own
+copy, and the rebuilt path regenerates an equivalent image from source.
 
 ## Upstream contribution assessment
 
