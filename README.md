@@ -89,7 +89,9 @@ three SM120 patches apply cleanly to that release and touch source trees that
 are byte-identical to `0.6.18`.
 
 **Rebuild status.** The three images were built from this repository on an
-8× RTX PRO 6000 (SM120) host. The engine image passes its baked-in overlay
+8× RTX PRO 6000 (SM120) host, and the path was then re-run from a fresh
+`git clone --recursive` on a host with no build cache and no pre-built
+prerequisite image. The engine image passes its baked-in overlay
 verification, reports the fork custom ops and tuned kernels, carries the patched
 DeepGEMM extension with an intact stock backup, and shows all three FlashInfer
 patches applied. Serving the full checkpoint with the measured configuration
@@ -98,6 +100,11 @@ alignment 64) reaches `Application startup complete` with successful CUDA graph
 capture, passes 11/11 API smoke tests, and reproduces the retained deployment's
 correctness result: 9/10 exact-answer and 5/5 retrieval, including the same
 `reverse` failure. See [results/](results/) for the recorded artifacts.
+
+The build is **not bit-reproducible** — apt packages and several pip
+dependencies resolve at build time, so rebuilding the same commit yields
+different image IDs of identical size. Confirm a build with the image checks
+and the serving validation, not with an image ID.
 
 The retained local-only images (`vllm-dsv4-vision`, the original
 `dsv41-vllm-ext`) are recorded in `versions.json` under

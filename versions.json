@@ -27,6 +27,8 @@
         "ext": "dsv41-vllm-ext:sm120 sha256:2ebccb984533",
         "engine": "dsv41-vllm:sm120 sha256:ad6f3ef8625c3c47d3047ea436cecbe845a8dd41248024f38b1599e2c5bb83e9"
       },
+      "image_id_caveat": "These IDs identify the build recorded above and are not stable across rebuilds: apt packages and several pip dependencies resolve at build time, so a clean-clone rebuild of the same commit produced different IDs of identical size. Use the image checks and the serving validation, not the ID, to confirm a build.",
+      "clean_clone_build": "Verified: git clone --recursive of the published repository followed by MAX_JOBS=64 STEPS=all ./docker-build-vllm.sh on a host with no build cache and no pre-built prerequisite image produced image IDs 0d1c64b32765 / 7316166ce7c5 / dc9bc30a45d4. The engine image passed the image checks, reached Application startup complete, passed 11/11 API smoke tests and reproduced 9/10 exact plus 5/5 retrieval.",
       "rebuild_note": "The fork main was force-updated to 005b0af0d996d354dde582152909be96f7feac07 after the first build. That revision has the same tree (803434a5702fa871123b1ec370b6e96c47d00c2e) as the previously pinned 4980e062, so the compiled content is unchanged. All three images were rebuilt at the new pin (16 minutes with MAX_JOBS=64) and the engine image re-validated.",
       "validation": [
         "Overlay verification baked into the image passes: import resolution, fork custom ops (vocab_parallel_embedding), tuned SM120 kernels, kernel-config knob.",

@@ -136,6 +136,19 @@ unchanged; all three images were rebuilt at the new pin (16 minutes with
 `MAX_JOBS=64`) and the engine image re-validated, giving the image IDs in the
 table above.
 
+**Clean-clone verification.** A `git clone --recursive` of this repository into
+an empty directory, followed by `MAX_JOBS=64 STEPS=all ./docker-build-vllm.sh`
+on a host with no build cache and no pre-built prerequisite image, completed
+successfully. The resulting engine image
+(`dc9bc30a45d4`, built 07:05) passed the same image checks, reached
+`Application startup complete`, passed 11/11 API smoke tests and reproduced
+9/10 exact plus 5/5 retrieval with only the `reverse` failure.
+
+The rebuild produced **different image IDs of identical size**. The build is not
+bit-reproducible: apt packages and several pip dependencies resolve at build
+time instead of being pinned by digest. Treat the image checks and the serving
+validation — not the ID — as the build's acceptance test.
+
 Two build-time facts are easy to misread: the fork's Dockerfile defaults to
 `max_jobs=2`, which serializes the ~410-target CUDA compile until the script
 raises `MAX_JOBS`; and upstream vllm-flash-attn resolves FA2 to `8.0+PTX` (PTX

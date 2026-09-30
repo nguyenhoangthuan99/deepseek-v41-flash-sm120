@@ -113,5 +113,20 @@
     "The rebuild ran on a different host of the same GPU model, so small deltas cover host and timing variation as well as any artifact difference.",
     "The SGLang engine, the VM100 deployment and the published benchmark aggregates were not re-validated here.",
     "Upstream vllm-flash-attn builds FA3 unconditionally; those Hopper kernels are present but unusable on SM120 and cannot be disabled through a supported flag."
-  ]
+  ],
+  "clean_clone_build": {
+    "what": "A git clone --recursive of the published repository into an empty directory, followed by MAX_JOBS=64 STEPS=all ./docker-build-vllm.sh with no warm build cache and no pre-built prerequisite image on the host.",
+    "clone": "git clone --recursive https://github.com/nguyenhoangthuan99/deepseek-v41-flash-sm120.git",
+    "submodules_resolved": {
+      "vllm": "005b0af0d996d354dde582152909be96f7feac07 (reachable from the fork's main)",
+      "sglang": "da64c5cbb8cf6bfd39be19da43573fdfd484c43a (orphan preview commit, servable by SHA)"
+    },
+    "result": "Build completed successfully; the engine image passes the same image checks, reaches Application startup complete, passes 11/11 API smoke tests, and reproduces 9/10 exact plus 5/5 retrieval with only the reverse failure.",
+    "image_ids": {
+      "base": "0d1c64b32765",
+      "ext": "7316166ce7c5",
+      "engine": "dc9bc30a45d4"
+    },
+    "reproducibility_note": "The clean-clone build produced different image IDs than the earlier build of the same commit, with identical image sizes. The build is not bit-reproducible because apt packages and several pip dependencies are resolved at build time rather than pinned by digest. The engine content and behaviour are equivalent, but the image IDs recorded earlier in this file refer to that earlier build and are not stable across rebuilds."
+  }
 }
