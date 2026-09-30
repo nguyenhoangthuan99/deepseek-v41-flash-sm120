@@ -6,7 +6,7 @@
   },
   "vllm": {
     "repository": "https://github.com/nguyenhoangthuan99/vllm.git",
-    "commit": "4980e06225532feca2ebad8c834dab3f7739acb9",
+    "commit": "005b0af0d996d354dde582152909be96f7feac07",
     "version": "0.28.1rc1.dev137+g5ab628dd1",
     "base_image": "vllm-dsv4-vision@sha256:f180cdb3cebca971e00d1c29057b80462eec69c524d60f308ef23fd53f5fe031",
     "clean_rebuild_status": "Not validated from a clean clone: the measured overlay used locally retained base and fork-built extension images, neither published by this repository.",

@@ -30,7 +30,7 @@ FROM ${EXT_IMAGE} AS ext
 FROM ${BASE_IMAGE} AS runtime
 
 ARG BASE_IMAGE
-ARG VLLM_COMMIT=4980e06225532feca2ebad8c834dab3f7739acb9
+ARG VLLM_COMMIT=005b0af0d996d354dde582152909be96f7feac07
 LABEL org.opencontainers.image.title="DeepSeek-V4.1-Flash SM120 vLLM engine" \
       org.opencontainers.image.description="Pinned vLLM fork with SM120 b12x/split-K MXFP8 linear kernel, MoE small-M alignment, and page-32 FlashInfer sparse MLA" \
       org.opencontainers.image.source="https://github.com/nguyenhoangthuan99/deepseek-v41-flash-sm120" \

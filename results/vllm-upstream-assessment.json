@@ -3,7 +3,7 @@
   "status": "read-only source assessment; no upstream PR, issue or code branch created",
   "vllm_upstream_snapshot": "606d124b377e6462fe0f9076df4d50c88e4dcf48",
   "flashinfer_upstream_snapshot": "6870e3fff46b1e768ad423ea48d286e6f3e250fe",
-  "fork_snapshot": "4980e06225532feca2ebad8c834dab3f7739acb9",
+  "fork_snapshot": "005b0af0d996d354dde582152909be96f7feac07",
   "recommended_first_pr": {
     "title": "[Bugfix][MoE] Preserve FP4 activation quantization groups during permutation",
     "target": "vllm-project/vllm",

@@ -3,7 +3,7 @@
   "deployment_label": "VM100",
   "engine": "vllm",
   "image_id_on_vm100": "sha256:84e4a4bdfefc1c7e789cc3b058b05ad4cb17bb45ab38fdd61f1e0134032983a3",
-  "vllm_commit": "4980e06225532feca2ebad8c834dab3f7739acb9",
+  "vllm_commit": "005b0af0d996d354dde582152909be96f7feac07",
   "sglang_commit": "da64c5cbb8cf6bfd39be19da43573fdfd484c43a",
   "served_model": "deepseek-v41-flash",
   "port": 30000,

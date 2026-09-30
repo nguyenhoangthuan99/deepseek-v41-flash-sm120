@@ -11,7 +11,7 @@ Two serving engines are packaged, each with its own Dockerfile and launcher:
 | Engine | Dockerfile | Launcher | Submodule |
 | --- | --- | --- | --- |
 | SGLang (default recipe, port 30000) | `Dockerfile.sglang` | `deploy.sh` | `sglang/` @ `da64c5cb` |
-| vLLM (launcher default 30100; validated deployment 30000) | `Dockerfile.vllm` | `serve-vllm.sh` | `vllm/` @ [`4980e062`](https://github.com/nguyenhoangthuan99/vllm/commit/4980e06225532feca2ebad8c834dab3f7739acb9) |
+| vLLM (launcher default 30100; validated deployment 30000) | `Dockerfile.vllm` | `serve-vllm.sh` | `vllm/` @ [`005b0af0`](https://github.com/nguyenhoangthuan99/vllm/commit/005b0af0d996d354dde582152909be96f7feac07) |
 
 ### Current vLLM deployment
 
