@@ -95,3 +95,30 @@ NIXL paths require NVLink/RDMA and are not applicable to this PCIe node.
    `cudaErrorSymbolNotFound` on this hardware.
 4. DP4×TP2 is a small improvement over DP8×TP1 (+8–16% at C4–C16) but still
    below TP8 below C32; not worth switching.
+
+## 7. Is DP slow because the kernels are not tuned for DP? (tested)
+
+No — protocol/kernel tuning does not close the gap:
+
+- **NCCL protocol tuning of the DP all-to-all**: DP8 no-spec re-run with
+  `NCCL_PROTO=LL128` (the protocol that helps TP8 saturated decode) gives
+  C1 44.8 vs 46.4 tok/s, C4 152.0 vs 157.6, C8 288.0 vs 287.9, C16 531.6 vs
+  547.2, C32 995.9 vs 1002.4 — i.e. slightly worse at every concurrency.
+  The allgather+reducescatter backend is not fixable by NCCL protocol choice.
+- **Sparse-MLA decode kernels are already tuned at DP's per-rank batch size**:
+  DP splits requests across ranks, so at C1-C8 each rank decodes exactly one
+  request (T=1 token/step). The FlashInfer autotune sweep showed the heuristic
+  is already optimal for T<=32 (18.46 us, at the launch-latency floor), and our
+  chunks_per_block cache only helps the T=64 bucket (C16-equivalent per rank:
+  C/8 -> T=8 at C64). There is no per-rank small-T win left.
+- **Architecture bound**: a DP rank computes attention/dense for its own request
+  only (1 GPU per request) while TP8 spreads one request over 8 GPUs; even if the
+  34% DP communication were free, DP C1 step would be ~13 ms vs TP8's 10.6 ms.
+- The properly tuned low-latency all-to-all (DeepEP) is unusable on SM120
+  (`cudaErrorSymbolNotFound`; also after forcing SM120 arch env), so the only
+  "tuned for DP" comm path cannot run here.
+
+Therefore DP attention is not a kernel-tuning problem at low concurrency: it is
+a parallelization-layout + missing SM120 all-to-all backend problem. Its wins
+(saturated C32 +16%, ~8x aggregate KV) appear only when enough requests per rank
+justify the layout.
