@@ -23,6 +23,13 @@ BLOCK_SIZE=${BLOCK_SIZE:-64}
 # DSpark speculative decoding depth. K3 measured best overall; SPEC=0 disables.
 SPEC=${SPEC:-1}
 DSPARK_TOKENS=${DSPARK_TOKENS:-3}
+# SM120 sparse-MLA engine selection in the mounted vLLM fork overlay:
+# fast = FlashInfer (default, measured winner), accurate = DeepInfer engine,
+# balanced = per-shape table. See vllm impl deepinfer_sm120/dispatch.py.
+SPARSE_MLA_ENGINE=${SPARSE_MLA_ENGINE:-fast}
+# Optional path to the modified vLLM fork checkout that supplies the Python
+# overlay mounted over the image's installed vLLM source.
+VLLM_FORK_DIR=${VLLM_FORK_DIR:-$ROOT/vllm}
 # Measured-win kernel overrides; KERNEL_CONFIG= (empty) reverts to defaults.
 KERNEL_CONFIG=${KERNEL_CONFIG-'{"linear_backend":"flashinfer_b12x","deep_gemm_moe_small_m_alignment":64}'}
 CUDAGRAPH_CONFIG=${CUDAGRAPH_CONFIG:-'{"cudagraph_mode":"FULL_DECODE_ONLY","cudagraph_capture_sizes":[3,4,6,8,12,16,24,32,48,64,96,128]}'}
@@ -59,11 +66,26 @@ args=(--model /model --served-model-name "${served[@]}" --tensor-parallel-size "
   "{\"method\":\"dspark\",\"num_speculative_tokens\":$DSPARK_TOKENS,\"draft_sample_method\":\"probabilistic\",\"rejection_sample_method\":\"standard\"}")
 [[ -z "$EXTRA_ARGS" ]] || { read -r -a extra <<<"$EXTRA_ARGS"; args+=("${extra[@]}"); }
 
+# Mount the modified vLLM fork's changed Python files over the image's installed
+# source, so the serving engine uses this repository's branch without an image
+# rebuild. Files: flashinfer_sparse.py (sparse-MLA engine hook) and the
+# deepinfer_sm120 package (kernels + dispatch).
+OVERLAY_MOUNTS=()
+INSTALLED_VLLM=${INSTALLED_VLLM:-/opt/dsv41/vllm-src/vllm}
+if [[ -f "$VLLM_FORK_DIR/vllm/models/deepseek_v41/nvidia/flashinfer_sparse.py" ]]; then
+  OVERLAY_MOUNTS+=(-v "$VLLM_FORK_DIR/vllm/models/deepseek_v41/nvidia/flashinfer_sparse.py:$INSTALLED_VLLM/models/deepseek_v41/nvidia/flashinfer_sparse.py:ro")
+  OVERLAY_MOUNTS+=(-v "$VLLM_FORK_DIR/vllm/models/deepseek_v41/nvidia/deepinfer_sm120:$INSTALLED_VLLM/models/deepseek_v41/nvidia/deepinfer_sm120:ro")
+else
+  echo "warning: $VLLM_FORK_DIR overlay not found; serving the image's built-in vLLM source" >&2
+fi
+
 docker run --init --rm --name "$NAME" --gpus "$GPU_DEVICES" --ipc=host --shm-size=64g \
   -p "$BIND_HOST:$PORT:$PORT" \
   -v "$MODEL_DIR:/model:ro" \
   -v "$CACHE_DIR/flashinfer:/cache/flashinfer" \
   -v "$CACHE_DIR/home:/root/.cache" \
+  "${OVERLAY_MOUNTS[@]}" \
   -e VLLM_USE_V2_MODEL_RUNNER=1 -e NCCL_P2P_LEVEL="$NCCL_P2P_LEVEL" \
+  -e VLLM_SM120_SPARSE_MLA_KERNEL="$SPARSE_MLA_ENGINE" \
   --entrypoint /opt/sm120-venv/bin/python "$IMAGE" \
   -m vllm.entrypoints.openai.api_server "${args[@]}" 2>&1 | tee "$RUN_LOG"

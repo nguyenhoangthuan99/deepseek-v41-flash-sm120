@@ -1,0 +1,37 @@
+{
+  "base_url": "http://127.0.0.1:30100",
+  "label": "vm106-dspark",
+  "mode": "repeat",
+  "rows": [
+    {
+      "requests": 6,
+      "concurrency": 1,
+      "wall_s": 3.2303849728778005,
+      "ttft_ms_median": 182.7797454316169,
+      "ttft_ms_p90": 184.31408097967505,
+      "tpot_ms_median": 5.3411867240414255,
+      "output_tokens": 384,
+      "prompt_tokens": 14448,
+      "output_tok_s": 118.87128104670205,
+      "request_s": 1.8573637663547196,
+      "input_tokens_target": 4096,
+      "mode": "repeat",
+      "label": "vm106-dspark"
+    },
+    {
+      "requests": 6,
+      "concurrency": 1,
+      "wall_s": 3.75510918488726,
+      "ttft_ms_median": 221.04538953863084,
+      "ttft_ms_p90": 224.0955801680684,
+      "tpot_ms_median": 6.7493511984745655,
+      "output_tokens": 384,
+      "prompt_tokens": 57456,
+      "output_tok_s": 102.26067501457453,
+      "request_s": 1.597823047102727,
+      "input_tokens_target": 16384,
+      "mode": "repeat",
+      "label": "vm106-dspark"
+    }
+  ]
+}

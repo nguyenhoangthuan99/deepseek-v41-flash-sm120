@@ -1,0 +1,37 @@
+{
+  "base_url": "http://10.200.108.100:30000",
+  "label": "vm100",
+  "mode": "repeat",
+  "rows": [
+    {
+      "requests": 6,
+      "concurrency": 1,
+      "wall_s": 3.0041515920311213,
+      "ttft_ms_median": 120.26101863011718,
+      "ttft_ms_p90": 126.6014501452446,
+      "tpot_ms_median": 5.875511250148216,
+      "output_tokens": 384,
+      "prompt_tokens": 14448,
+      "output_tok_s": 127.82311019810281,
+      "request_s": 1.9972360968453564,
+      "input_tokens_target": 4096,
+      "mode": "repeat",
+      "label": "vm100"
+    },
+    {
+      "requests": 6,
+      "concurrency": 1,
+      "wall_s": 3.238282518927008,
+      "ttft_ms_median": 145.08662605658174,
+      "ttft_ms_p90": 149.06657999381423,
+      "tpot_ms_median": 6.3820765316782015,
+      "output_tokens": 384,
+      "prompt_tokens": 57456,
+      "output_tok_s": 118.5813769353382,
+      "request_s": 1.8528340146146594,
+      "input_tokens_target": 16384,
+      "mode": "repeat",
+      "label": "vm100"
+    }
+  ]
+}

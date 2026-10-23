@@ -5,4 +5,5 @@
 [submodule "vllm"]
 	path = vllm
 	url = https://github.com/nguyenhoangthuan99/vllm.git
+	branch = sm120-deepinfer-kernels
 	shallow = true
