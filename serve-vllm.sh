@@ -30,6 +30,10 @@ SPARSE_MLA_ENGINE=${SPARSE_MLA_ENGINE:-fast}
 # Optional path to the modified vLLM fork checkout that supplies the Python
 # overlay mounted over the image's installed vLLM source.
 VLLM_FORK_DIR=${VLLM_FORK_DIR:-$ROOT/vllm}
+# FlashInfer AutoTuner cache for the SM120 sparse-MLA decode kernel: a per-shape
+# chunks_per_block table tuned on this hardware (T=64 bucket: 32.8us vs 45.1us
+# heuristic). Mounted into the container and loaded automatically by FlashInfer.
+FI_AUTOTUNE_DIR=${FI_AUTOTUNE_DIR:-$ROOT/results/sm120-kernel-ab/fi_autotune}
 # Measured-win kernel overrides; KERNEL_CONFIG= (empty) reverts to defaults.
 KERNEL_CONFIG=${KERNEL_CONFIG-'{"linear_backend":"flashinfer_b12x","deep_gemm_moe_small_m_alignment":64}'}
 CUDAGRAPH_CONFIG=${CUDAGRAPH_CONFIG:-'{"cudagraph_mode":"FULL_DECODE_ONLY","cudagraph_capture_sizes":[3,4,6,8,12,16,24,32,48,64,96,128]}'}
@@ -85,12 +89,23 @@ else
   echo "warning: $VLLM_FORK_DIR overlay not found; serving the image's built-in vLLM source" >&2
 fi
 
+FI_MOUNTS=()
+FI_AUTOTUNE_ENVS=()
+if [[ -f "$FI_AUTOTUNE_DIR/sparse_mla_sm120_decode_dsv4.json" ]]; then
+  FI_MOUNTS=(-v "$FI_AUTOTUNE_DIR:/opt/fi_autotune:ro")
+  FI_AUTOTUNE_ENVS=(-e FLASHINFER_AUTOTUNE_DIR=/opt/fi_autotune)
+else
+  echo "warning: FlashInfer autotune cache not found at $FI_AUTOTUNE_DIR; using kernel heuristic" >&2
+fi
+
 docker run --init --rm --name "$NAME" --gpus "$GPU_DEVICES" --ipc=host --shm-size=64g \
   -p "$BIND_HOST:$PORT:$PORT" \
   -v "$MODEL_DIR:/model:ro" \
   -v "$CACHE_DIR/flashinfer:/cache/flashinfer" \
   -v "$CACHE_DIR/home:/root/.cache" \
   "${OVERLAY_MOUNTS[@]}" \
+  ${FI_MOUNTS} \
+  ${FI_AUTOTUNE_ENVS} \
   -e VLLM_USE_V2_MODEL_RUNNER=1 -e NCCL_P2P_LEVEL="$NCCL_P2P_LEVEL" \
   ${NCCL_PROTO:+-e NCCL_PROTO="$NCCL_PROTO"} \
   ${NCCL_ALGO:+-e NCCL_ALGO="$NCCL_ALGO"} \

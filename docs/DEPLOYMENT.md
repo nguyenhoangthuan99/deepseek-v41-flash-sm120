@@ -463,3 +463,7 @@ DSpark block sizes 1/3/5/8 were screened; `3` is the balanced default and `5` a 
 The default localhost binding is deliberate. No authentication is enabled by the launch recipe. Expose it externally only through a trusted, authenticated proxy with network access controls. Do not assume a private network, a renamed model, or an obscure port provides authorization. Protect prompts, outputs, and shared model files independently of API access.
 
 Keep `.env`, generated logs, caches, and checkpoints out of version control and image build contexts. Review any diagnostic artifact before sharing it. This repository intentionally contains generic paths and sanitized measurement summaries instead of raw server logs or private infrastructure addresses.
+
+### FlashInfer sparse-MLA autotune cache
+
+`FI_AUTOTUNE_DIR` (default `results/sm120-kernel-ab/fi_autotune`) is mounted at `/opt/fi_autotune` and passed as `FLASHINFER_AUTOTUNE_DIR`; it contains the per-shape `chunks_per_block` table tuned on SM120 (T=64 decode bucket: 32.8 µs vs 45.1 µs heuristic).
