@@ -104,8 +104,8 @@ docker run --init --rm --name "$NAME" --gpus "$GPU_DEVICES" --ipc=host --shm-siz
   -v "$CACHE_DIR/flashinfer:/cache/flashinfer" \
   -v "$CACHE_DIR/home:/root/.cache" \
   "${OVERLAY_MOUNTS[@]}" \
-  ${FI_MOUNTS} \
-  ${FI_AUTOTUNE_ENVS} \
+  "${FI_MOUNTS[@]}" \
+  "${FI_AUTOTUNE_ENVS[@]}" \
   -e VLLM_USE_V2_MODEL_RUNNER=1 -e NCCL_P2P_LEVEL="$NCCL_P2P_LEVEL" \
   ${NCCL_PROTO:+-e NCCL_PROTO="$NCCL_PROTO"} \
   ${NCCL_ALGO:+-e NCCL_ALGO="$NCCL_ALGO"} \
