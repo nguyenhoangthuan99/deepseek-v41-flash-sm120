@@ -1,0 +1,2 @@
+576:    constexpr int kNumThreads = 256;  // SM120: 99KB dynamic-smem limit; 768 warps*8192B = 192KB
+577-    constexpr int kNumTMABytesPerWarp = 8192;
