@@ -264,7 +264,7 @@ All file paths internal to the launcher resolve relative to `deploy.sh`, not the
 | `MOE_BACKEND` | `flashinfer_mxfp4` | MoE backend. `marlin` is the documented alternative. |
 | `SPEC` | `1` | Enable static DSpark speculation; set `0` for non-speculative serving. |
 | `DSPARK_BLOCK` | `3` | Static speculative block size. `5` is a code-oriented measured alternative, not the default. |
-| `SPARSE_MLA_ENGINE` | `fast` | SM120 sparse-MLA engine in the mounted vLLM fork overlay: `fast` = FlashInfer (measured winner), `balanced` = per-input-size table, `accurate` = DeepInfer kernel (better numerics, slower). The overlay mounts the fork’s `flashinfer_sparse.py` + `deepinfer_sm120/` over the image source; changing engine for already-captured CUDA-graph buckets requires a restart (re-capture). |
+| `SPARSE_MLA_ENGINE` | `fast` | SM120 sparse-MLA engine in the mounted vLLM fork overlay: `fast` = vLLM native FlashInfer kernel (default; measured winner), `balanced` = per-input-size table, `accurate` = DeepInfer kernel (better numerics, slower); `correct/correctness` are accepted aliases. The overlay mounts the fork’s `flashinfer_sparse.py` + `deepinfer_sm120/` over the image source; changing engine for already-captured CUDA-graph buckets requires a restart (re-capture). |
 | `CONTEXT_LEN` | `1048576` | Configured token limit, **not** a proven full-window workload capacity. |
 | `MEM_FRACTION` | `0.80` | Static GPU-memory fraction. KV allocation does not guarantee every request mixture fits. |
 | `MAX_RUNNING` | `32` | Maximum simultaneously running requests; not a guarantee of 32 full-window requests. |
