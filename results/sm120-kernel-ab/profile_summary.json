@@ -1,0 +1,572 @@
+{
+  "decode_c1": {
+    "trace_files": 9,
+    "rank0_total_kernel_us": 1993534.7549999994,
+    "rank0_kernels": 169099,
+    "mean_total_kernel_us": 1983984.9339999985,
+    "family_us": {
+      "nccl": 1152646.001499999,
+      "sparse_mla_attn": 258876.92400000035,
+      "moe": 220699.41849999994,
+      "dense_gemm": 121298.2574999999,
+      "other": 85061.24849999945,
+      "norm_mhc": 73121.14699999972,
+      "elementwise_copy": 21319.208999999963,
+      "kv_cache_write": 19268.753499999857,
+      "indexer_topk": 15059.246000000094,
+      "engram_embed": 13822.34599999997,
+      "sampler": 2812.3824999999993
+    },
+    "top_kernels": [
+      {
+        "name": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 1134544.5,
+        "pct": 57.19
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 768u, 5120u, 128u, 32u, 384u, 64u, 128u, 128u, 128u, 128u, 128u, 3u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 64u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 109713.8,
+        "pct": 5.53
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 5120u, 384u, 128u, 32u, 384u, 64u, 128u, 128u, 128u, 128u, 128u, 3u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 64u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 61753.3,
+        "pct": 3.11
+      },
+      {
+        "name": "void flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<(ModelType)1, 8, 128, 64>(__nv_bfloat16 const*, unsigned char const*, int const*, __nv_bfloat16*, float*, int const*, unsigned char const*, int const*, int const*, int, int, unsigned long, int, int, int, float, unsigned long)",
+        "us": 43039.6,
+        "pct": 2.17
+      },
+      {
+        "name": "mhc_fused_tilelang_kernel",
+        "us": 36508.0,
+        "pct": 1.84
+      },
+      {
+        "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+        "us": 33413.3,
+        "pct": 1.68
+      },
+      {
+        "name": "kernel_cutlass_kernel_flashinfergemmkernelsdense_blockscaled_gemm_sm120_b12xDenseGemmKernel_object_at__CopyAtom_ThrID10_TVLayoutSrc1204801_TVLayoutDst1204801_Valuetypef8E4M3FN_tensor000o4_0",
+        "us": 32426.6,
+        "pct": 1.63
+      },
+      {
+        "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x2_tn_align8>(cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x2_tn_align8::Params)",
+        "us": 32259.4,
+        "pct": 1.63
+      },
+      {
+        "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_s161616gemm_bf16_32x32_64x1_tn_align8>(cutlass_80_wmma_tensorop_s161616gemm_bf16_32x32_64x1_tn_align8::Params)",
+        "us": 30862.6,
+        "pct": 1.56
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelIN10flashinfer4gemm54DeviceGemmMxfp8GemmSm120___nv_bfloat16_128_64_128false9Sm12xOnlyINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS5_10collective13CollectiveMmaINS5_42MainloopSm120TmaWarpSpecializedBlockScaledILi3ELi3ENS9_IJNS8_1CILi1EEESF_SF_EEENS5_51KernelTmaWarpSpecializedCooperativeBlockScaledSm120ILi3EEEEENS9_IJNSE_ILi128EEENSE_ILi64EEESK_EEENS9_IJNS_12float_e4m3_tENS_13float_ue8m0_tEEEENS9_IJNS9_IJlSF_lEEENS8_6LayoutINS9_IJNS9_IJNS9_IJNSE_ILi32EEENSE_ILi4EEEEEEiEEESV_NS9_IJSF_iEEEEEENS9_IJNS9_IJNS9_IJNSE_ILi16EEEST_EEEiEEENS9_IJNS9_IJNSE_ILi0EEESF_EEENSE_ILi512EEEEEENS9_IJS11_iEEEEEEEEEEESP_S18_NS8_8TiledMMAINS8_8MMA_AtomIJNS8_5SM12011BLOCKSCALED19SM120_16x8x32_TN_VSISN_SN_fSO_Li32EEEEEENSR_INS9_IJST_NSE_ILi2EEESF_EEENS9_IJSF_ST_S11_EEEEENS9_IJSK_NSR_INS9_IJNSE_ILi8EEES1G_S1G_EEENS9_IJSF_SY_S1K_EEEEESS_EEEEENS9_IJNS8_13SM90_TMA_LOADES1Q_EEENS9_IJNS8_14ComposedLayoutINS8_7SwizzleILi3ELi4ELi3EEENS8_18smem_ptr_flag_bitsILi8EEENSR_INS9_IJS1K_SK_EEENS9_IJSK_SF_EEEEEEENSR_INS9_IJNS9_IJSU_SF_EEENS9_IJNS9_IJSS_SF_EEEST_SF_EEEEEENS9_IJNS9_IJSZ_S13_EEENS9_IJS12_SF_S13_EEEEEEEEEEENS9_IJNS8_9Copy_AtomIJNS8_17SM75_U32x4_LDSM_NEhEEENS2A_IJNS8_13UniversalCopyISO_SO_EESO_EEEEEENS8_8identityES1R_S29_S2G_S2H_EENS_8epilogue10collective18CollectiveEpilogueINS2J_22Sm90TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEEJSM_NS9_IJSL_SS_EEEvSQ_NS_10bfloat16_tESQ_NS2J_6fusion15FusionCallbacksINS2J_23Sm120TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEENS2Q_17LinearCombinationIS2P_fvfLNS_15FloatRoundStyleE2EEESM_S2O_JEEES1Q_NS1S_INS1T_ILi2ELi4ELi3EEENS1V_ILi16EEENSR_INS9_IJS1K_SS_EEES22_EEEENS8_17SM75_U32x2_LDSM_NENS8_14SM90_TMA_STOREES32_NS8_17SM90_U32x2_STSM_NENS2A_IJS35_NS_6half_tEEEEvEEENS5_19PersistentSchedulerEvEEEEEEvNT_6ParamsE",
+        "us": 26318.1,
+        "pct": 1.33
+      },
+      {
+        "name": "kernel_cutlass_kernel_flashinfergemmkernelsdense_blockscaled_gemm_sm120_b12xDenseGemmKernel_object_at__CopyAtom_ThrID10_TVLayoutSrc1409601_TVLayoutDst1409601_Valuetypef8E4M3FN_tensor00o11_0",
+        "us": 26237.5,
+        "pct": 1.32
+      },
+      {
+        "name": "kernel_cutlass_kernel_flashinfergemmkernelsdense_blockscaled_gemm_sm120_b12xDenseGemmKernel_object_at__CopyAtom_ThrID10_TVLayoutSrc1819201_TVLayoutDst1819201_Valuetypef8E4M3FN_tensor00o11_0",
+        "us": 25200.1,
+        "pct": 1.27
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelIN10flashinfer4gemm53DeviceGemmMxfp8GemmSm120___nv_bfloat16_128_32_128true9Sm12xOnlyINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS5_10collective13CollectiveMmaINS5_42MainloopSm120TmaWarpSpecializedBlockScaledILi4ELi3ENS9_IJNS8_1CILi1EEESF_SF_EEENS5_51KernelTmaWarpSpecializedCooperativeBlockScaledSm120ILi3EEEEENS9_IJNSE_ILi128EEENSE_ILi32EEESK_EEENS9_IJNS_12float_e4m3_tENS_13float_ue8m0_tEEEENS9_IJNS9_IJlSF_lEEENS8_6LayoutINS9_IJNS9_IJNS9_IJSL_NSE_ILi4EEEEEEiEEESU_NS9_IJSF_iEEEEEENS9_IJNS9_IJNS9_IJNSE_ILi16EEESS_EEEiEEENS9_IJNS9_IJNSE_ILi0EEESF_EEENSE_ILi512EEEEEENS9_IJS10_iEEEEEEEEEEESP_S17_NS8_8TiledMMAINS8_8MMA_AtomIJNS8_5SM12011BLOCKSCALED19SM120_16x8x32_TN_VSISN_SN_fSO_Li32EEEEEENSR_INS9_IJSS_NSE_ILi2EEESF_EEENS9_IJSF_SS_S10_EEEEENS9_IJSK_NSR_INS9_IJNSE_ILi8EEES1F_S1F_EEENS9_IJSF_SX_S1J_EEEEESL_EEEEENS9_IJNS8_13SM90_TMA_LOADES1P_EEENS9_IJNS8_14ComposedLayoutINS8_7SwizzleILi3ELi4ELi3EEENS8_18smem_ptr_flag_bitsILi8EEENSR_INS9_IJS1J_SK_EEENS9_IJSK_SF_EEEEEEENSR_INS9_IJNS9_IJST_SF_EEENS9_IJNS9_IJSL_SF_EEESS_SF_EEEEEENS9_IJNS9_IJSY_S12_EEENS9_IJS11_SF_S12_EEEEEEEEEEENS9_IJNS8_9Copy_AtomIJNS8_17SM75_U32x4_LDSM_NEhEEENS29_IJNS8_13UniversalCopyISO_SO_EESO_EEEEEENS8_8identityES1Q_S28_S2F_S2G_EENS_8epilogue10collective18CollectiveEpilogueINS2I_22Sm90TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEEJSM_NS9_IJNSE_ILi64EEESL_EEEvNS9_IJSF_llEEENS_10bfloat16_tES2P_NS2I_6fusion15FusionCallbacksINS2I_23Sm120TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEENS2R_17LinearCombinationIS2Q_fvfLNS_15FloatRoundStyleE2EEESM_S2O_JEEES1P_NS1R_IS1T_NS1U_ILi16EEENSR_INS9_IJS2N_S1J_EEENS9_IJSF_S2N_EEEEEEENS8_17SM75_U16x4_LDSM_TENS8_14SM90_TMA_STOREES33_NS8_17SM90_U16x4_STSM_TENS29_IJNS8_17SM90_U32x2_STSM_NENS_6half_tEEEEvEEENS5_19PersistentSchedulerEvEEEEEEvNT_6ParamsE",
+        "us": 21219.2,
+        "pct": 1.07
+      },
+      {
+        "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_32x32_64x1_tn_align8>(cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_32x32_64x1_tn_align8::Params)",
+        "us": 20406.3,
+        "pct": 1.03
+      }
+    ],
+    "files": [
+      "dp0_pp0_tp0_dcp0_ep0_rank0.1792733763616335903.pt.trace.json.gz",
+      "dp0_pp0_tp1_dcp0_ep1_rank1.1792733763741977159.pt.trace.json.gz"
+    ]
+  },
+  "decode_c32": {
+    "trace_files": 9,
+    "rank0_total_kernel_us": 3507496.628999997,
+    "rank0_kernels": 95280,
+    "mean_total_kernel_us": 3367469.827499996,
+    "family_us": {
+      "nccl": 1847251.804499996,
+      "moe": 774939.444,
+      "sparse_mla_attn": 306157.7225000002,
+      "dense_gemm": 115177.28899999995,
+      "norm_mhc": 113736.38849999997,
+      "other": 104893.30549999999,
+      "engram_embed": 43729.57300000006,
+      "elementwise_copy": 27761.492499999997,
+      "kv_cache_write": 18312.974500000033,
+      "indexer_topk": 13387.068000000041,
+      "sampler": 2122.7655
+    },
+    "top_kernels": [
+      {
+        "name": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 1744450.5,
+        "pct": 51.8
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 768u, 5120u, 128u, 32u, 384u, 64u, 128u, 128u, 128u, 128u, 128u, 3u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 64u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 372906.3,
+        "pct": 11.07
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 5120u, 384u, 128u, 32u, 384u, 64u, 128u, 128u, 128u, 128u, 128u, 3u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 64u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 187156.4,
+        "pct": 5.56
+      },
+      {
+        "name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 102801.3,
+        "pct": 3.05
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 768u, 5120u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 73811.1,
+        "pct": 2.19
+      },
+      {
+        "name": "mhc_post_tilelang_kernel",
+        "us": 64696.6,
+        "pct": 1.92
+      },
+      {
+        "name": "void sparse_mla_prefill_mg_dual_kernel<(ModelType)1, (ComputeMode)1, 8, 128, 64, 64, 1>(__nv_bfloat16 const*, unsigned char const*, int const*, unsigned char const*, int const*, __nv_bfloat16*, float*, float const*, PrefillColdParams)",
+        "us": 59617.9,
+        "pct": 1.77
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 5120u, 384u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 54285.4,
+        "pct": 1.61
+      },
+      {
+        "name": "void sparse_mla_prefill_mg_dual_kernel<(ModelType)1, (ComputeMode)1, 8, 128, 64, 32, 1>(__nv_bfloat16 const*, unsigned char const*, int const*, unsigned char const*, int const*, __nv_bfloat16*, float*, float const*, PrefillColdParams)",
+        "us": 41906.8,
+        "pct": 1.24
+      },
+      {
+        "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+        "us": 41176.0,
+        "pct": 1.22
+      },
+      {
+        "name": "void deep_gemm::sm120_tf32_hc_prenorm_gemm_impl<24u, 20480u, 128u, 32u, 64u, 16u, 4u, 256u, 128u>(unsigned int, CUtensorMap_st, CUtensorMap_st, float*, float*, long, long)",
+        "us": 39733.3,
+        "pct": 1.18
+      },
+      {
+        "name": "_silu_mul_quant_fp8_packed_kernel",
+        "us": 38258.7,
+        "pct": 1.14
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelIN10flashinfer4gemm55DeviceGemmMxfp8GemmSm120___nv_bfloat16_128_128_128false9Sm12xOnlyINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS5_10collective13CollectiveMmaINS5_42MainloopSm120TmaWarpSpecializedBlockScaledILi2ELi3ENS9_IJNS8_1CILi1EEESF_SF_EEENS5_51KernelTmaWarpSpecializedCooperativeBlockScaledSm120ILi3EEEEENS9_IJNSE_ILi128EEESK_SK_EEENS9_IJNS_12float_e4m3_tENS_13float_ue8m0_tEEEENS9_IJNS9_IJlSF_lEEENS8_6LayoutINS9_IJNS9_IJNS9_IJNSE_ILi32EEENSE_ILi4EEEEEEiEEESU_NS9_IJSF_iEEEEEENS9_IJNS9_IJNS9_IJNSE_ILi16EEESS_EEEiEEENS9_IJNS9_IJNSE_ILi0EEESF_EEENSE_ILi512EEEEEENS9_IJS10_iEEEEEEEEEEESO_S17_NS8_8TiledMMAINS8_8MMA_AtomIJNS8_5SM12011BLOCKSCALED19SM120_16x8x32_TN_VSISM_SM_fSN_Li32EEEEEENSQ_INS9_IJSS_NSE_ILi2EEESF_EEENS9_IJSF_SS_S10_EEEEENS9_IJSK_NSQ_INS9_IJNSE_ILi8EEES1F_S1F_EEENS9_IJSF_SX_S1J_EEEEESR_EEEEENS9_IJNS8_13SM90_TMA_LOADES1P_EEENS9_IJNS8_14ComposedLayoutINS8_7SwizzleILi3ELi4ELi3EEENS8_18smem_ptr_flag_bitsILi8EEENSQ_INS9_IJS1J_SK_EEENS9_IJSK_SF_EEEEEEENSQ_INS9_IJNS9_IJST_SF_EEENS9_IJNS9_IJSR_SF_EEESS_SF_EEEEEENS9_IJNS9_IJSY_S12_EEENS9_IJS11_SF_S12_EEEEEEEEEEENS9_IJNS8_9Copy_AtomIJNS8_17SM75_U32x4_LDSM_NEhEEENS29_IJNS8_13UniversalCopyISN_SN_EESN_EEEEEENS8_8identityES1Q_S28_S2F_S2G_EENS_8epilogue10collective18CollectiveEpilogueINS2I_22Sm90TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEEJSL_NS9_IJNSE_ILi64EEESR_EEEvSP_NS_10bfloat16_tESP_NS2I_6fusion15FusionCallbacksINS2I_23Sm120TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEENS2Q_17LinearCombinationIS2P_fvfLNS_15FloatRoundStyleE2EEESL_S2O_JEEES1P_NS1R_INS1S_ILi2ELi4ELi3EEENS1U_ILi16EEENSQ_INS9_IJS1J_SR_EEES21_EEEENS8_17SM75_U32x2_LDSM_NENS8_14SM90_TMA_STOREES32_NS8_17SM90_U32x2_STSM_NENS29_IJS35_NS_6half_tEEEEvEEENS5_19PersistentSchedulerEvEEEEEEvNT_6ParamsE",
+        "us": 38199.7,
+        "pct": 1.13
+      },
+      {
+        "name": "_mask_candidates_kernel",
+        "us": 37669.7,
+        "pct": 1.12
+      }
+    ],
+    "files": [
+      "dp0_pp0_tp0_dcp0_ep0_rank0.1792734382574662690.pt.trace.json.gz",
+      "dp0_pp0_tp1_dcp0_ep1_rank1.1792734381787246933.pt.trace.json.gz"
+    ]
+  },
+  "decode_c8": {
+    "trace_files": 9,
+    "rank0_total_kernel_us": 2559397.1160000013,
+    "rank0_kernels": 130577,
+    "mean_total_kernel_us": 2540764.8585000006,
+    "family_us": {
+      "nccl": 1258099.7155000009,
+      "moe": 658324.2179999999,
+      "sparse_mla_attn": 248814.56850000005,
+      "dense_gemm": 107188.6475,
+      "norm_mhc": 104823.26999999973,
+      "other": 89533.50200000012,
+      "elementwise_copy": 21636.11300000008,
+      "engram_embed": 20013.183999999997,
+      "kv_cache_write": 17049.229499999965,
+      "indexer_topk": 12666.627500000055,
+      "sampler": 2615.7829999999994
+    },
+    "top_kernels": [
+      {
+        "name": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 1208342.3,
+        "pct": 47.56
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 768u, 5120u, 128u, 32u, 384u, 64u, 128u, 128u, 128u, 128u, 128u, 3u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 64u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 384452.0,
+        "pct": 15.13
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 5120u, 384u, 128u, 32u, 384u, 64u, 128u, 128u, 128u, 128u, 128u, 3u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 64u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 155253.4,
+        "pct": 6.11
+      },
+      {
+        "name": "mhc_fused_tilelang_kernel",
+        "us": 64584.8,
+        "pct": 2.54
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 768u, 5120u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 51235.1,
+        "pct": 2.02
+      },
+      {
+        "name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 49757.4,
+        "pct": 1.96
+      },
+      {
+        "name": "void flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<(ModelType)1, 8, 128, 64>(__nv_bfloat16 const*, unsigned char const*, int const*, __nv_bfloat16*, float*, int const*, unsigned char const*, int const*, int const*, int, int, unsigned long, int, int, int, float, unsigned long)",
+        "us": 47622.3,
+        "pct": 1.87
+      },
+      {
+        "name": "kernel_cutlass_kernel_flashinfergemmkernelsdense_blockscaled_gemm_sm120_b12xDenseGemmKernel_object_at__CopyAtom_ThrID10_TVLayoutSrc1204801_TVLayoutDst1204801_Valuetypef8E4M3FN_tensor00o11_0",
+        "us": 36650.2,
+        "pct": 1.44
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 5120u, 384u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 33893.4,
+        "pct": 1.33
+      },
+      {
+        "name": "_silu_mul_quant_fp8_packed_kernel",
+        "us": 30653.0,
+        "pct": 1.21
+      },
+      {
+        "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+        "us": 27852.3,
+        "pct": 1.1
+      },
+      {
+        "name": "void cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_64x64_32x6_tn_align8>(cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_64x64_32x6_tn_align8::Params)",
+        "us": 26207.8,
+        "pct": 1.03
+      },
+      {
+        "name": "kernel_cutlass_kernel_flashinfergemmkernelsdense_blockscaled_gemm_sm120_b12xDenseGemmKernel_object_at__CopyAtom_ThrID10_TVLayoutSrc1409601_TVLayoutDst1409601_Valuetypef8E4M3FN_tensor000o4_0",
+        "us": 24489.8,
+        "pct": 0.96
+      },
+      {
+        "name": "_mask_candidates_kernel",
+        "us": 18826.9,
+        "pct": 0.74
+      }
+    ],
+    "files": [
+      "dp0_pp0_tp0_dcp0_ep0_rank0.1792733988075676635.pt.trace.json.gz",
+      "dp0_pp0_tp1_dcp0_ep1_rank1.1792733988928016903.pt.trace.json.gz"
+    ]
+  },
+  "mixed_16k_c4": {
+    "trace_files": 9,
+    "rank0_total_kernel_us": 5352392.423000009,
+    "rank0_kernels": 64109,
+    "mean_total_kernel_us": 5382372.781500006,
+    "family_us": {
+      "nccl": 3414952.0835000062,
+      "sparse_mla_attn": 653529.7230000002,
+      "moe": 572862.8185,
+      "norm_mhc": 306633.7034999996,
+      "dense_gemm": 123853.22199999998,
+      "engram_embed": 110212.0534999999,
+      "other": 97104.55700000003,
+      "elementwise_copy": 46484.16300000014,
+      "kv_cache_write": 33163.124000000025,
+      "indexer_topk": 22568.150000000016,
+      "sampler": 1009.1835000000001
+    },
+    "top_kernels": [
+      {
+        "name": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 3358337.3,
+        "pct": 62.4
+      },
+      {
+        "name": "void sparse_mla_prefill_mg_dual_kernel<(ModelType)1, (ComputeMode)1, 8, 128, 64, 64, 1>(__nv_bfloat16 const*, unsigned char const*, int const*, unsigned char const*, int const*, __nv_bfloat16*, float*, float const*, PrefillColdParams)",
+        "us": 192591.3,
+        "pct": 3.58
+      },
+      {
+        "name": "mhc_post_tilelang_kernel",
+        "us": 184187.9,
+        "pct": 3.42
+      },
+      {
+        "name": "void sparse_mla_prefill_mg_dual_kernel<(ModelType)1, (ComputeMode)1, 8, 128, 64, 32, 1>(__nv_bfloat16 const*, unsigned char const*, int const*, unsigned char const*, int const*, __nv_bfloat16*, float*, float const*, PrefillColdParams)",
+        "us": 170780.7,
+        "pct": 3.17
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 768u, 5120u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 159816.8,
+        "pct": 2.97
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 5120u, 384u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 122656.8,
+        "pct": 2.28
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelIN10flashinfer4gemm55DeviceGemmMxfp8GemmSm120___nv_bfloat16_128_128_128false9Sm12xOnlyINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS5_10collective13CollectiveMmaINS5_42MainloopSm120TmaWarpSpecializedBlockScaledILi2ELi3ENS9_IJNS8_1CILi1EEESF_SF_EEENS5_51KernelTmaWarpSpecializedCooperativeBlockScaledSm120ILi3EEEEENS9_IJNSE_ILi128EEESK_SK_EEENS9_IJNS_12float_e4m3_tENS_13float_ue8m0_tEEEENS9_IJNS9_IJlSF_lEEENS8_6LayoutINS9_IJNS9_IJNS9_IJNSE_ILi32EEENSE_ILi4EEEEEEiEEESU_NS9_IJSF_iEEEEEENS9_IJNS9_IJNS9_IJNSE_ILi16EEESS_EEEiEEENS9_IJNS9_IJNSE_ILi0EEESF_EEENSE_ILi512EEEEEENS9_IJS10_iEEEEEEEEEEESO_S17_NS8_8TiledMMAINS8_8MMA_AtomIJNS8_5SM12011BLOCKSCALED19SM120_16x8x32_TN_VSISM_SM_fSN_Li32EEEEEENSQ_INS9_IJSS_NSE_ILi2EEESF_EEENS9_IJSF_SS_S10_EEEEENS9_IJSK_NSQ_INS9_IJNSE_ILi8EEES1F_S1F_EEENS9_IJSF_SX_S1J_EEEEESR_EEEEENS9_IJNS8_13SM90_TMA_LOADES1P_EEENS9_IJNS8_14ComposedLayoutINS8_7SwizzleILi3ELi4ELi3EEENS8_18smem_ptr_flag_bitsILi8EEENSQ_INS9_IJS1J_SK_EEENS9_IJSK_SF_EEEEEEENSQ_INS9_IJNS9_IJST_SF_EEENS9_IJNS9_IJSR_SF_EEESS_SF_EEEEEENS9_IJNS9_IJSY_S12_EEENS9_IJS11_SF_S12_EEEEEEEEEEENS9_IJNS8_9Copy_AtomIJNS8_17SM75_U32x4_LDSM_NEhEEENS29_IJNS8_13UniversalCopyISN_SN_EESN_EEEEEENS8_8identityES1Q_S28_S2F_S2G_EENS_8epilogue10collective18CollectiveEpilogueINS2I_22Sm90TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEEJSL_NS9_IJNSE_ILi64EEESR_EEEvSP_NS_10bfloat16_tESP_NS2I_6fusion15FusionCallbacksINS2I_23Sm120TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEENS2Q_17LinearCombinationIS2P_fvfLNS_15FloatRoundStyleE2EEESL_S2O_JEEES1P_NS1R_INS1S_ILi2ELi4ELi3EEENS1U_ILi16EEENSQ_INS9_IJS1J_SR_EEES21_EEEENS8_17SM75_U32x2_LDSM_NENS8_14SM90_TMA_STOREES32_NS8_17SM90_U32x2_STSM_NENS29_IJS35_NS_6half_tEEEEvEEENS5_19PersistentSchedulerEvEEEEEEvNT_6ParamsE",
+        "us": 122109.7,
+        "pct": 2.27
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 768u, 5120u, 128u, 32u, 384u, 64u, 128u, 128u, 128u, 128u, 128u, 3u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 64u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 109591.7,
+        "pct": 2.04
+      },
+      {
+        "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+        "us": 102341.0,
+        "pct": 1.9
+      },
+      {
+        "name": "void deep_gemm::sm120_tf32_hc_prenorm_gemm_impl<24u, 20480u, 128u, 32u, 64u, 1u, 4u, 256u, 128u>(unsigned int, CUtensorMap_st, CUtensorMap_st, float*, float*, long, long)",
+        "us": 90540.3,
+        "pct": 1.68
+      },
+      {
+        "name": "_fwd_kernel_ep_gather",
+        "us": 82139.7,
+        "pct": 1.53
+      },
+      {
+        "name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 56614.8,
+        "pct": 1.05
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelIN10flashinfer4gemm54DeviceGemmMxfp8GemmSm120___nv_bfloat16_128_128_128true9Sm12xOnlyINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS5_10collective13CollectiveMmaINS5_42MainloopSm120TmaWarpSpecializedBlockScaledILi2ELi3ENS9_IJNS8_1CILi1EEESF_SF_EEENS5_51KernelTmaWarpSpecializedCooperativeBlockScaledSm120ILi3EEEEENS9_IJNSE_ILi128EEESK_SK_EEENS9_IJNS_12float_e4m3_tENS_13float_ue8m0_tEEEENS9_IJNS9_IJlSF_lEEENS8_6LayoutINS9_IJNS9_IJNS9_IJNSE_ILi32EEENSE_ILi4EEEEEEiEEESU_NS9_IJSF_iEEEEEENS9_IJNS9_IJNS9_IJNSE_ILi16EEESS_EEEiEEENS9_IJNS9_IJNSE_ILi0EEESF_EEENSE_ILi512EEEEEENS9_IJS10_iEEEEEEEEEEESO_S17_NS8_8TiledMMAINS8_8MMA_AtomIJNS8_5SM12011BLOCKSCALED19SM120_16x8x32_TN_VSISM_SM_fSN_Li32EEEEEENSQ_INS9_IJSS_NSE_ILi2EEESF_EEENS9_IJSF_SS_S10_EEEEENS9_IJSK_NSQ_INS9_IJNSE_ILi8EEES1F_S1F_EEENS9_IJSF_SX_S1J_EEEEESR_EEEEENS9_IJNS8_13SM90_TMA_LOADES1P_EEENS9_IJNS8_14ComposedLayoutINS8_7SwizzleILi3ELi4ELi3EEENS8_18smem_ptr_flag_bitsILi8EEENSQ_INS9_IJS1J_SK_EEENS9_IJSK_SF_EEEEEEENSQ_INS9_IJNS9_IJST_SF_EEENS9_IJNS9_IJSR_SF_EEESS_SF_EEEEEENS9_IJNS9_IJSY_S12_EEENS9_IJS11_SF_S12_EEEEEEEEEEENS9_IJNS8_9Copy_AtomIJNS8_17SM75_U32x4_LDSM_NEhEEENS29_IJNS8_13UniversalCopyISN_SN_EESN_EEEEEENS8_8identityES1Q_S28_S2F_S2G_EENS_8epilogue10collective18CollectiveEpilogueINS2I_22Sm90TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEEJSL_NS9_IJNSE_ILi64EEESR_EEEvNS9_IJSF_llEEENS_10bfloat16_tES2P_NS2I_6fusion15FusionCallbacksINS2I_23Sm120TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEENS2R_17LinearCombinationIS2Q_fvfLNS_15FloatRoundStyleE2EEESL_S2O_JEEES1P_NS1R_IS1T_NS1U_ILi16EEENSQ_INS9_IJS2N_S1J_EEENS9_IJSF_S2N_EEEEEEENS8_17SM75_U16x4_LDSM_TENS8_14SM90_TMA_STOREES33_NS8_17SM90_U16x4_STSM_TENS29_IJNS8_17SM90_U32x2_STSM_NENS_6half_tEEEEvEEENS5_19PersistentSchedulerEvEEEEEEvNT_6ParamsE",
+        "us": 54869.8,
+        "pct": 1.02
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 5120u, 384u, 128u, 32u, 384u, 64u, 128u, 128u, 128u, 128u, 128u, 3u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 64u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 42783.0,
+        "pct": 0.79
+      }
+    ],
+    "files": [
+      "dp0_pp0_tp0_dcp0_ep0_rank0.1792734959019456528.pt.trace.json.gz",
+      "dp0_pp0_tp1_dcp0_ep1_rank1.1792734959014132862.pt.trace.json.gz"
+    ]
+  },
+  "prefill_32k_c1": {
+    "trace_files": 9,
+    "rank0_total_kernel_us": 2420251.0599999996,
+    "rank0_kernels": 5992,
+    "mean_total_kernel_us": 2422690.8055,
+    "family_us": {
+      "nccl": 1616836.4619999998,
+      "sparse_mla_attn": 290083.851,
+      "moe": 201752.73549999998,
+      "norm_mhc": 137021.88999999998,
+      "engram_embed": 55741.766999999985,
+      "dense_gemm": 45089.15750000001,
+      "other": 33644.36300000002,
+      "elementwise_copy": 21603.181499999995,
+      "kv_cache_write": 13364.459999999997,
+      "indexer_topk": 7479.854,
+      "sampler": 73.08399999999999
+    },
+    "top_kernels": [
+      {
+        "name": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 1593543.4,
+        "pct": 65.78
+      },
+      {
+        "name": "void sparse_mla_prefill_mg_dual_kernel<(ModelType)1, (ComputeMode)1, 8, 128, 64, 64, 1>(__nv_bfloat16 const*, unsigned char const*, int const*, unsigned char const*, int const*, __nv_bfloat16*, float*, float const*, PrefillColdParams)",
+        "us": 98264.5,
+        "pct": 4.06
+      },
+      {
+        "name": "mhc_post_tilelang_kernel",
+        "us": 91523.3,
+        "pct": 3.78
+      },
+      {
+        "name": "void sparse_mla_prefill_mg_dual_kernel<(ModelType)1, (ComputeMode)1, 8, 128, 64, 32, 1>(__nv_bfloat16 const*, unsigned char const*, int const*, unsigned char const*, int const*, __nv_bfloat16*, float*, float const*, PrefillColdParams)",
+        "us": 87835.2,
+        "pct": 3.63
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 768u, 5120u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 74687.0,
+        "pct": 3.08
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelIN10flashinfer4gemm55DeviceGemmMxfp8GemmSm120___nv_bfloat16_128_128_128false9Sm12xOnlyINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS5_10collective13CollectiveMmaINS5_42MainloopSm120TmaWarpSpecializedBlockScaledILi2ELi3ENS9_IJNS8_1CILi1EEESF_SF_EEENS5_51KernelTmaWarpSpecializedCooperativeBlockScaledSm120ILi3EEEEENS9_IJNSE_ILi128EEESK_SK_EEENS9_IJNS_12float_e4m3_tENS_13float_ue8m0_tEEEENS9_IJNS9_IJlSF_lEEENS8_6LayoutINS9_IJNS9_IJNS9_IJNSE_ILi32EEENSE_ILi4EEEEEEiEEESU_NS9_IJSF_iEEEEEENS9_IJNS9_IJNS9_IJNSE_ILi16EEESS_EEEiEEENS9_IJNS9_IJNSE_ILi0EEESF_EEENSE_ILi512EEEEEENS9_IJS10_iEEEEEEEEEEESO_S17_NS8_8TiledMMAINS8_8MMA_AtomIJNS8_5SM12011BLOCKSCALED19SM120_16x8x32_TN_VSISM_SM_fSN_Li32EEEEEENSQ_INS9_IJSS_NSE_ILi2EEESF_EEENS9_IJSF_SS_S10_EEEEENS9_IJSK_NSQ_INS9_IJNSE_ILi8EEES1F_S1F_EEENS9_IJSF_SX_S1J_EEEEESR_EEEEENS9_IJNS8_13SM90_TMA_LOADES1P_EEENS9_IJNS8_14ComposedLayoutINS8_7SwizzleILi3ELi4ELi3EEENS8_18smem_ptr_flag_bitsILi8EEENSQ_INS9_IJS1J_SK_EEENS9_IJSK_SF_EEEEEEENSQ_INS9_IJNS9_IJST_SF_EEENS9_IJNS9_IJSR_SF_EEESS_SF_EEEEEENS9_IJNS9_IJSY_S12_EEENS9_IJS11_SF_S12_EEEEEEEEEEENS9_IJNS8_9Copy_AtomIJNS8_17SM75_U32x4_LDSM_NEhEEENS29_IJNS8_13UniversalCopyISN_SN_EESN_EEEEEENS8_8identityES1Q_S28_S2F_S2G_EENS_8epilogue10collective18CollectiveEpilogueINS2I_22Sm90TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEEJSL_NS9_IJNSE_ILi64EEESR_EEEvSP_NS_10bfloat16_tESP_NS2I_6fusion15FusionCallbacksINS2I_23Sm120TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEENS2Q_17LinearCombinationIS2P_fvfLNS_15FloatRoundStyleE2EEESL_S2O_JEEES1P_NS1R_INS1S_ILi2ELi4ELi3EEENS1U_ILi16EEENSQ_INS9_IJS1J_SR_EEES21_EEEENS8_17SM75_U32x2_LDSM_NENS8_14SM90_TMA_STOREES32_NS8_17SM90_U32x2_STSM_NENS29_IJS35_NS_6half_tEEEEvEEENS5_19PersistentSchedulerEvEEEEEEvNT_6ParamsE",
+        "us": 60911.8,
+        "pct": 2.51
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 5120u, 384u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 56339.8,
+        "pct": 2.33
+      },
+      {
+        "name": "void deep_gemm::sm120_tf32_hc_prenorm_gemm_impl<24u, 20480u, 128u, 32u, 64u, 1u, 4u, 256u, 128u>(unsigned int, CUtensorMap_st, CUtensorMap_st, float*, float*, long, long)",
+        "us": 45387.2,
+        "pct": 1.87
+      },
+      {
+        "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+        "us": 44274.0,
+        "pct": 1.83
+      },
+      {
+        "name": "_fwd_kernel_ep_gather",
+        "us": 39130.0,
+        "pct": 1.62
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelIN10flashinfer4gemm54DeviceGemmMxfp8GemmSm120___nv_bfloat16_128_128_128true9Sm12xOnlyINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS5_10collective13CollectiveMmaINS5_42MainloopSm120TmaWarpSpecializedBlockScaledILi2ELi3ENS9_IJNS8_1CILi1EEESF_SF_EEENS5_51KernelTmaWarpSpecializedCooperativeBlockScaledSm120ILi3EEEEENS9_IJNSE_ILi128EEESK_SK_EEENS9_IJNS_12float_e4m3_tENS_13float_ue8m0_tEEEENS9_IJNS9_IJlSF_lEEENS8_6LayoutINS9_IJNS9_IJNS9_IJNSE_ILi32EEENSE_ILi4EEEEEEiEEESU_NS9_IJSF_iEEEEEENS9_IJNS9_IJNS9_IJNSE_ILi16EEESS_EEEiEEENS9_IJNS9_IJNSE_ILi0EEESF_EEENSE_ILi512EEEEEENS9_IJS10_iEEEEEEEEEEESO_S17_NS8_8TiledMMAINS8_8MMA_AtomIJNS8_5SM12011BLOCKSCALED19SM120_16x8x32_TN_VSISM_SM_fSN_Li32EEEEEENSQ_INS9_IJSS_NSE_ILi2EEESF_EEENS9_IJSF_SS_S10_EEEEENS9_IJSK_NSQ_INS9_IJNSE_ILi8EEES1F_S1F_EEENS9_IJSF_SX_S1J_EEEEESR_EEEEENS9_IJNS8_13SM90_TMA_LOADES1P_EEENS9_IJNS8_14ComposedLayoutINS8_7SwizzleILi3ELi4ELi3EEENS8_18smem_ptr_flag_bitsILi8EEENSQ_INS9_IJS1J_SK_EEENS9_IJSK_SF_EEEEEEENSQ_INS9_IJNS9_IJST_SF_EEENS9_IJNS9_IJSR_SF_EEESS_SF_EEEEEENS9_IJNS9_IJSY_S12_EEENS9_IJS11_SF_S12_EEEEEEEEEEENS9_IJNS8_9Copy_AtomIJNS8_17SM75_U32x4_LDSM_NEhEEENS29_IJNS8_13UniversalCopyISN_SN_EESN_EEEEEENS8_8identityES1Q_S28_S2F_S2G_EENS_8epilogue10collective18CollectiveEpilogueINS2I_22Sm90TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEEJSL_NS9_IJNSE_ILi64EEESR_EEEvNS9_IJSF_llEEENS_10bfloat16_tES2P_NS2I_6fusion15FusionCallbacksINS2I_23Sm120TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEENS2R_17LinearCombinationIS2Q_fvfLNS_15FloatRoundStyleE2EEESL_S2O_JEEES1P_NS1R_IS1T_NS1U_ILi16EEENSQ_INS9_IJS2N_S1J_EEENS9_IJSF_S2N_EEEEEEENS8_17SM75_U16x4_LDSM_TENS8_14SM90_TMA_STOREES33_NS8_17SM90_U16x4_STSM_TENS29_IJNS8_17SM90_U32x2_STSM_NENS_6half_tEEEEvEEENS5_19PersistentSchedulerEvEEEEEEvNT_6ParamsE",
+        "us": 26550.1,
+        "pct": 1.1
+      },
+      {
+        "name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 23293.0,
+        "pct": 0.96
+      },
+      {
+        "name": "_fwd_kernel_ep_scatter_2",
+        "us": 17871.0,
+        "pct": 0.74
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_mqa_logits<32u, 128u, false, 4u, 128u, 2u, 3u, 188u, 128u, 256u, float>(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int*, unsigned int*, float*, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 16959.6,
+        "pct": 0.7
+      }
+    ],
+    "files": [
+      "dp0_pp0_tp0_dcp0_ep0_rank0.1792733103565788964.pt.trace.json.gz",
+      "dp0_pp0_tp1_dcp0_ep1_rank1.1792733102827402465.pt.trace.json.gz"
+    ]
+  },
+  "prefill_8k_c8": {
+    "trace_files": 9,
+    "rank0_total_kernel_us": 5024236.960000004,
+    "rank0_kernels": 12050,
+    "mean_total_kernel_us": 5013247.4795,
+    "family_us": {
+      "nccl": 3410783.612,
+      "sparse_mla_attn": 564693.941,
+      "moe": 414512.1650000001,
+      "norm_mhc": 279885.22700000013,
+      "engram_embed": 108061.196,
+      "dense_gemm": 91635.505,
+      "other": 66375.84449999999,
+      "elementwise_copy": 41226.38750000001,
+      "kv_cache_write": 26273.330000000005,
+      "indexer_topk": 9634.926500000001,
+      "sampler": 165.34499999999997
+    },
+    "top_kernels": [
+      {
+        "name": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 3364158.7,
+        "pct": 67.11
+      },
+      {
+        "name": "void sparse_mla_prefill_mg_dual_kernel<(ModelType)1, (ComputeMode)1, 8, 128, 64, 64, 1>(__nv_bfloat16 const*, unsigned char const*, int const*, unsigned char const*, int const*, __nv_bfloat16*, float*, float const*, PrefillColdParams)",
+        "us": 189858.9,
+        "pct": 3.79
+      },
+      {
+        "name": "mhc_post_tilelang_kernel",
+        "us": 183959.7,
+        "pct": 3.67
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 768u, 5120u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 165800.8,
+        "pct": 3.31
+      },
+      {
+        "name": "void sparse_mla_prefill_mg_dual_kernel<(ModelType)1, (ComputeMode)1, 8, 128, 64, 32, 1>(__nv_bfloat16 const*, unsigned char const*, int const*, unsigned char const*, int const*, __nv_bfloat16*, float*, float const*, PrefillColdParams)",
+        "us": 165501.0,
+        "pct": 3.3
+      },
+      {
+        "name": "void deep_gemm::sm120_fp8_fp4_gemm_1d1d_impl<0u, 5120u, 384u, 128u, 32u, 384u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 128u, 256u, 188u, (deep_gemm::GemmType)1, false, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity, false, true, false, true, false, 128u, 1u>(cutlass::bfloat16_t*, cutlass::bfloat16_t const*, __nv_fp8_e4m3*, __nv_fp8_e4m3*, int*, CUtensorMap_st*, float*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)",
+        "us": 127505.7,
+        "pct": 2.54
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelIN10flashinfer4gemm55DeviceGemmMxfp8GemmSm120___nv_bfloat16_128_128_128false9Sm12xOnlyINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS5_10collective13CollectiveMmaINS5_42MainloopSm120TmaWarpSpecializedBlockScaledILi2ELi3ENS9_IJNS8_1CILi1EEESF_SF_EEENS5_51KernelTmaWarpSpecializedCooperativeBlockScaledSm120ILi3EEEEENS9_IJNSE_ILi128EEESK_SK_EEENS9_IJNS_12float_e4m3_tENS_13float_ue8m0_tEEEENS9_IJNS9_IJlSF_lEEENS8_6LayoutINS9_IJNS9_IJNS9_IJNSE_ILi32EEENSE_ILi4EEEEEEiEEESU_NS9_IJSF_iEEEEEENS9_IJNS9_IJNS9_IJNSE_ILi16EEESS_EEEiEEENS9_IJNS9_IJNSE_ILi0EEESF_EEENSE_ILi512EEEEEENS9_IJS10_iEEEEEEEEEEESO_S17_NS8_8TiledMMAINS8_8MMA_AtomIJNS8_5SM12011BLOCKSCALED19SM120_16x8x32_TN_VSISM_SM_fSN_Li32EEEEEENSQ_INS9_IJSS_NSE_ILi2EEESF_EEENS9_IJSF_SS_S10_EEEEENS9_IJSK_NSQ_INS9_IJNSE_ILi8EEES1F_S1F_EEENS9_IJSF_SX_S1J_EEEEESR_EEEEENS9_IJNS8_13SM90_TMA_LOADES1P_EEENS9_IJNS8_14ComposedLayoutINS8_7SwizzleILi3ELi4ELi3EEENS8_18smem_ptr_flag_bitsILi8EEENSQ_INS9_IJS1J_SK_EEENS9_IJSK_SF_EEEEEEENSQ_INS9_IJNS9_IJST_SF_EEENS9_IJNS9_IJSR_SF_EEESS_SF_EEEEEENS9_IJNS9_IJSY_S12_EEENS9_IJS11_SF_S12_EEEEEEEEEEENS9_IJNS8_9Copy_AtomIJNS8_17SM75_U32x4_LDSM_NEhEEENS29_IJNS8_13UniversalCopyISN_SN_EESN_EEEEEENS8_8identityES1Q_S28_S2F_S2G_EENS_8epilogue10collective18CollectiveEpilogueINS2I_22Sm90TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEEJSL_NS9_IJNSE_ILi64EEESR_EEEvSP_NS_10bfloat16_tESP_NS2I_6fusion15FusionCallbacksINS2I_23Sm120TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEENS2Q_17LinearCombinationIS2P_fvfLNS_15FloatRoundStyleE2EEESL_S2O_JEEES1P_NS1R_INS1S_ILi2ELi4ELi3EEENS1U_ILi16EEENSQ_INS9_IJS1J_SR_EEES21_EEEENS8_17SM75_U32x2_LDSM_NENS8_14SM90_TMA_STOREES32_NS8_17SM90_U32x2_STSM_NENS29_IJS35_NS_6half_tEEEEvEEENS5_19PersistentSchedulerEvEEEEEEvNT_6ParamsE",
+        "us": 117810.6,
+        "pct": 2.35
+      },
+      {
+        "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+        "us": 93455.8,
+        "pct": 1.86
+      },
+      {
+        "name": "void deep_gemm::sm120_tf32_hc_prenorm_gemm_impl<24u, 20480u, 128u, 32u, 64u, 1u, 4u, 256u, 128u>(unsigned int, CUtensorMap_st, CUtensorMap_st, float*, float*, long, long)",
+        "us": 90416.5,
+        "pct": 1.8
+      },
+      {
+        "name": "_fwd_kernel_ep_gather",
+        "us": 79005.8,
+        "pct": 1.58
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelIN10flashinfer4gemm54DeviceGemmMxfp8GemmSm120___nv_bfloat16_128_128_128true9Sm12xOnlyINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS5_10collective13CollectiveMmaINS5_42MainloopSm120TmaWarpSpecializedBlockScaledILi2ELi3ENS9_IJNS8_1CILi1EEESF_SF_EEENS5_51KernelTmaWarpSpecializedCooperativeBlockScaledSm120ILi3EEEEENS9_IJNSE_ILi128EEESK_SK_EEENS9_IJNS_12float_e4m3_tENS_13float_ue8m0_tEEEENS9_IJNS9_IJlSF_lEEENS8_6LayoutINS9_IJNS9_IJNS9_IJNSE_ILi32EEENSE_ILi4EEEEEEiEEESU_NS9_IJSF_iEEEEEENS9_IJNS9_IJNS9_IJNSE_ILi16EEESS_EEEiEEENS9_IJNS9_IJNSE_ILi0EEESF_EEENSE_ILi512EEEEEENS9_IJS10_iEEEEEEEEEEESO_S17_NS8_8TiledMMAINS8_8MMA_AtomIJNS8_5SM12011BLOCKSCALED19SM120_16x8x32_TN_VSISM_SM_fSN_Li32EEEEEENSQ_INS9_IJSS_NSE_ILi2EEESF_EEENS9_IJSF_SS_S10_EEEEENS9_IJSK_NSQ_INS9_IJNSE_ILi8EEES1F_S1F_EEENS9_IJSF_SX_S1J_EEEEESR_EEEEENS9_IJNS8_13SM90_TMA_LOADES1P_EEENS9_IJNS8_14ComposedLayoutINS8_7SwizzleILi3ELi4ELi3EEENS8_18smem_ptr_flag_bitsILi8EEENSQ_INS9_IJS1J_SK_EEENS9_IJSK_SF_EEEEEEENSQ_INS9_IJNS9_IJST_SF_EEENS9_IJNS9_IJSR_SF_EEESS_SF_EEEEEENS9_IJNS9_IJSY_S12_EEENS9_IJS11_SF_S12_EEEEEEEEEEENS9_IJNS8_9Copy_AtomIJNS8_17SM75_U32x4_LDSM_NEhEEENS29_IJNS8_13UniversalCopyISN_SN_EESN_EEEEEENS8_8identityES1Q_S28_S2F_S2G_EENS_8epilogue10collective18CollectiveEpilogueINS2I_22Sm90TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEEJSL_NS9_IJNSE_ILi64EEESR_EEEvNS9_IJSF_llEEENS_10bfloat16_tES2P_NS2I_6fusion15FusionCallbacksINS2I_23Sm120TmaWarpSpecializedILi2ELi2ELi4ELb0ELb1EEENS2R_17LinearCombinationIS2Q_fvfLNS_15FloatRoundStyleE2EEESL_S2O_JEEES1P_NS1R_IS1T_NS1U_ILi16EEENSQ_INS9_IJS2N_S1J_EEENS9_IJSF_S2N_EEEEEEENS8_17SM75_U16x4_LDSM_TENS8_14SM90_TMA_STOREES33_NS8_17SM90_U16x4_STSM_TENS29_IJNS8_17SM90_U32x2_STSM_NENS_6half_tEEEEvEEENS5_19PersistentSchedulerEvEEEEEEvNT_6ParamsE",
+        "us": 55358.4,
+        "pct": 1.1
+      },
+      {
+        "name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "us": 46624.9,
+        "pct": 0.93
+      },
+      {
+        "name": "_fwd_kernel_ep_scatter_2",
+        "us": 36213.1,
+        "pct": 0.72
+      },
+      {
+        "name": "void cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x256_32x3_tn_align8>(cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x256_32x3_tn_align8::Params)",
+        "us": 35471.3,
+        "pct": 0.71
+      }
+    ],
+    "files": [
+      "dp0_pp0_tp0_dcp0_ep0_rank0.1792733363890829819.pt.trace.json.gz",
+      "dp0_pp0_tp1_dcp0_ep1_rank1.1792733363796968705.pt.trace.json.gz"
+    ]
+  }
+}
