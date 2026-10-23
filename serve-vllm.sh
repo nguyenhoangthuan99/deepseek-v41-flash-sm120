@@ -34,6 +34,12 @@ VLLM_FORK_DIR=${VLLM_FORK_DIR:-$ROOT/vllm}
 KERNEL_CONFIG=${KERNEL_CONFIG-'{"linear_backend":"flashinfer_b12x","deep_gemm_moe_small_m_alignment":64}'}
 CUDAGRAPH_CONFIG=${CUDAGRAPH_CONFIG:-'{"cudagraph_mode":"FULL_DECODE_ONLY","cudagraph_capture_sizes":[3,4,6,8,12,16,24,32,48,64,96,128]}'}
 NCCL_P2P_LEVEL=${NCCL_P2P_LEVEL:-PHB}
+# Optional NCCL protocol/algorithm overrides for communication tuning.
+# Measured on this PCIe-only node: leave unset for latency-sensitive workloads;
+# NCCL_PROTO=LL128 gives ~+10% saturated-decode throughput (C>=16) at the cost
+# of ~7-11% TPOT at C1-C4. See results/sm120-kernel-ab/NCCL-SWEEP-REPORT.md.
+NCCL_PROTO=${NCCL_PROTO:-}
+NCCL_ALGO=${NCCL_ALGO:-}
 GPU_DEVICES=${GPU_DEVICES:-all}
 CACHE_DIR=${CACHE_DIR:-/mnt/nas/.cache/dsv41-sm120}
 LOGDIR=${LOGDIR:-$ROOT/logs}
@@ -86,6 +92,8 @@ docker run --init --rm --name "$NAME" --gpus "$GPU_DEVICES" --ipc=host --shm-siz
   -v "$CACHE_DIR/home:/root/.cache" \
   "${OVERLAY_MOUNTS[@]}" \
   -e VLLM_USE_V2_MODEL_RUNNER=1 -e NCCL_P2P_LEVEL="$NCCL_P2P_LEVEL" \
+  ${NCCL_PROTO:+-e NCCL_PROTO="$NCCL_PROTO"} \
+  ${NCCL_ALGO:+-e NCCL_ALGO="$NCCL_ALGO"} \
   -e VLLM_SM120_SPARSE_MLA_KERNEL="$SPARSE_MLA_ENGINE" \
   --entrypoint /opt/sm120-venv/bin/python "$IMAGE" \
   -m vllm.entrypoints.openai.api_server "${args[@]}" 2>&1 | tee "$RUN_LOG"
