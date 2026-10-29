@@ -1,0 +1,35 @@
+{
+  "_metadata": {
+    "flashinfer_version": "0.6.18.post1",
+    "cuda_version": "13.0",
+    "cublas_version": "13.1.1",
+    "cudnn_version": "92000",
+    "cudnn_frontend_version": "1.30.0",
+    "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition"
+  },
+  "('sparse_mla_sm120_decode_dsv4', 'SparseMlaDecodeV3Runner', ((1, 16, 512), (1, 128), (-1, 16, 10, 512), (-1, 16, 10), (-1, 16, 512), (-1, 16), (1,), (0,), (1, 512), (1,)), (True, False, 512, True))": [
+    "SparseMlaDecodeV3Runner",
+    1
+  ],
+  "('sparse_mla_sm120_decode_dsv4', 'SparseMlaDecodeV3Runner', ((16, 16, 512), (16, 128), (-1, 16, 10, 512), (-1, 16, 10), (-1, 16, 512), (-1, 16), (16,), (0,), (16, 512), (16,)), (True, False, 512, True))": [
+    "SparseMlaDecodeV3Runner",
+    1
+  ],
+  "('sparse_mla_sm120_decode_dsv4', 'SparseMlaDecodeV3Runner', ((32, 16, 512), (32, 128), (-1, 16, 10, 512), (-1, 16, 10), (-1, 16, 512), (-1, 16), (32,), (0,), (32, 512), (32,)), (True, False, 512, True))": [
+    "SparseMlaDecodeV3Runner",
+    2
+  ],
+  "('sparse_mla_sm120_decode_dsv4', 'SparseMlaDecodeV3Runner', ((4, 16, 512), (4, 128), (-1, 16, 10, 512), (-1, 16, 10), (-1, 16, 512), (-1, 16), (4,), (0,), (4, 512), (4,)), (True, False, 512, True))": [
+    "SparseMlaDecodeV3Runner",
+    1
+  ],
+  "('sparse_mla_sm120_decode_dsv4', 'SparseMlaDecodeV3Runner', ((64, 16, 512), (64, 128), (-1, 16, 10, 512), (-1, 16, 10), (-1, 16, 512), (-1, 16), (64,), (0,), (64, 512), (64,)), (True, False, 512, True))": [
+    "SparseMlaDecodeV3Runner",
+    5
+  ],
+  "('sparse_mla_sm120_decode_dsv4', 'SparseMlaDecodeV3Runner', ((8, 16, 512), (8, 128), (-1, 16, 10, 512), (-1, 16, 10), (-1, 16, 512), (-1, 16), (8,), (0,), (8, 512), (8,)), (True, False, 512, True))": [
+    "SparseMlaDecodeV3Runner",
+    1
+  ],
+  "_generation": "3b382a610c843673412ab98ec70ff8cbeb4aaaf362c9a2fdd3fb45ce9f409779"
+}
