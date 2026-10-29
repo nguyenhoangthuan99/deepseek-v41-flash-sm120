@@ -1,0 +1,111 @@
+{
+  "base_url": "http://127.0.0.1:18012",
+  "label": "moet-k7",
+  "mode": "unique",
+  "rows": [
+    {
+      "ttft_ms_median": 198.59247654676437,
+      "ttft_ms_p90": 199.73745103925467,
+      "tpot_ms_median": 2.7750366907257256,
+      "output_tok_s": 345.2680161148774,
+      "request_s": 0.337175796987185,
+      "wall_s": 11.863247705623507,
+      "input_tokens_target": 2048,
+      "mode": "unique",
+      "label": "moet-k7",
+      "requests": 4,
+      "concurrency": 1,
+      "rounds": 1,
+      "per_round": [
+        {
+          "wall_s": 11.863247705623507,
+          "ttft_ms_median": 198.59247654676437,
+          "ttft_ms_p90": 199.73745103925467,
+          "tpot_ms_median": 2.7750366907257256,
+          "output_tokens": 4096,
+          "prompt_tokens": 4994,
+          "output_tok_s": 345.2680161148774,
+          "request_s": 0.337175796987185
+        }
+      ]
+    },
+    {
+      "ttft_ms_median": 499.5317622087896,
+      "ttft_ms_p90": 499.83576219528913,
+      "tpot_ms_median": 8.588892460517577,
+      "output_tok_s": 413.768219450313,
+      "request_s": 0.4040705268069463,
+      "wall_s": 9.89926197193563,
+      "input_tokens_target": 2048,
+      "mode": "unique",
+      "label": "moet-k7",
+      "requests": 4,
+      "concurrency": 4,
+      "rounds": 1,
+      "per_round": [
+        {
+          "wall_s": 9.89926197193563,
+          "ttft_ms_median": 499.5317622087896,
+          "ttft_ms_p90": 499.83576219528913,
+          "tpot_ms_median": 8.588892460517577,
+          "output_tokens": 4096,
+          "prompt_tokens": 5001,
+          "output_tok_s": 413.768219450313,
+          "request_s": 0.4040705268069463
+        }
+      ]
+    },
+    {
+      "ttft_ms_median": 453.97404534742236,
+      "ttft_ms_p90": 454.37133219093084,
+      "tpot_ms_median": 2.888333814387972,
+      "output_tok_s": 296.36772175372715,
+      "request_s": 0.2894216032751242,
+      "wall_s": 13.820668376982212,
+      "input_tokens_target": 8192,
+      "mode": "unique",
+      "label": "moet-k7",
+      "requests": 4,
+      "concurrency": 1,
+      "rounds": 1,
+      "per_round": [
+        {
+          "wall_s": 13.820668376982212,
+          "ttft_ms_median": 453.97404534742236,
+          "ttft_ms_p90": 454.37133219093084,
+          "tpot_ms_median": 2.888333814387972,
+          "output_tokens": 4096,
+          "prompt_tokens": 19327,
+          "output_tok_s": 296.36772175372715,
+          "request_s": 0.2894216032751242
+        }
+      ]
+    },
+    {
+      "ttft_ms_median": 1183.5532085970044,
+      "ttft_ms_p90": 1330.0991486757994,
+      "tpot_ms_median": 8.420792939951633,
+      "output_tok_s": 415.60594068643303,
+      "request_s": 0.40586517645159476,
+      "wall_s": 9.855489537119865,
+      "input_tokens_target": 8192,
+      "mode": "unique",
+      "label": "moet-k7",
+      "requests": 4,
+      "concurrency": 4,
+      "rounds": 1,
+      "per_round": [
+        {
+          "wall_s": 9.855489537119865,
+          "ttft_ms_median": 1183.5532085970044,
+          "ttft_ms_p90": 1330.0991486757994,
+          "tpot_ms_median": 8.420792939951633,
+          "output_tokens": 4096,
+          "prompt_tokens": 19329,
+          "output_tok_s": 415.60594068643303,
+          "request_s": 0.40586517645159476
+        }
+      ]
+    }
+  ]
+}

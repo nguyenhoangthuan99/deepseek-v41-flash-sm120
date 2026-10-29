@@ -1,0 +1,43 @@
+{
+  "base_url": "http://127.0.0.1:18011",
+  "label": "ours-tp8-k3",
+  "mode": "unique",
+  "rows": [
+    {
+      "ttft_ms_median": 1313.5538848582655,
+      "ttft_ms_p90": 1314.0047155320644,
+      "tpot_ms_median": 4.439989877316881,
+      "output_tok_s": 103.0294987208942,
+      "request_s": 0.40245897937849295,
+      "wall_s": 9.940245269332081,
+      "input_tokens_target": 16384,
+      "mode": "unique",
+      "label": "ours-tp8-k3",
+      "requests": 4,
+      "concurrency": 1,
+      "rounds": 2,
+      "per_round": [
+        {
+          "wall_s": 9.824654628522694,
+          "ttft_ms_median": 1314.2576036043465,
+          "ttft_ms_p90": 1314.303512685001,
+          "tpot_ms_median": 4.145993160850861,
+          "output_tokens": 1024,
+          "prompt_tokens": 38436,
+          "output_tok_s": 104.227582415686,
+          "request_s": 0.40713899381127344
+        },
+        {
+          "wall_s": 10.055835910141468,
+          "ttft_ms_median": 1312.8501661121845,
+          "ttft_ms_p90": 1313.705918379128,
+          "tpot_ms_median": 4.733986593782902,
+          "output_tokens": 1024,
+          "prompt_tokens": 38440,
+          "output_tok_s": 101.8314150261024,
+          "request_s": 0.3977789649457125
+        }
+      ]
+    }
+  ]
+}
